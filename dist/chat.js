@@ -1,4 +1,5 @@
 import {findScenario, scenarios} from './scenarios.js';
+import {practiceCases} from './practice.js';
 
 const conversation = document.getElementById('conversation');
 const suggestions = document.getElementById('suggestions');
@@ -6,6 +7,7 @@ const form = document.getElementById('chat-form');
 const question = document.getElementById('question');
 let lesson = -1;
 let activeScenario;
+let activePractice;
 let previousPractice;
 
 const topics = {
@@ -63,22 +65,59 @@ function offer(...options) {
   }));
 }
 
-function askScenario(key, text, practice = false) {
+function askScenario(key, text) {
   const scenario = scenarios[key];
   const answer = scenario.answers.find(item => item.inMessage?.(text));
   if (answer) {
-    finishScenario(scenario, answer, practice);
+    finishScenario(scenario, answer);
     return;
   }
-  activeScenario = {scenario, practice};
-  const opening = practice ? ['Practice scenario', scenario.example, ...scenario.opening] : scenario.opening;
-  appendTurn('RiskPilot', opening, scenario.source);
+  activeScenario = scenario;
+  appendTurn('RiskPilot', scenario.opening, scenario.source);
   offer(...scenario.answers.map((item, index) => ['answer-' + index, item.label]), 'practice');
 }
 
-function finishScenario(scenario, answer, practice) {
+function finishScenario(scenario, answer) {
   activeScenario = undefined;
-  appendTurn('RiskPilot', practice ? ['Here’s what I’d do in that scenario.', answer.reply] : [answer.reply], scenario.source);
+  appendTurn('RiskPilot', [answer.reply], scenario.source);
+  offer('practice', 'tutorial', 'workbench');
+}
+
+function startPractice() {
+  activeScenario = undefined;
+  const keys = Object.keys(practiceCases).filter(key => key !== previousPractice);
+  const key = keys[Math.floor(Math.random() * keys.length)];
+  previousPractice = key;
+  const exercise = practiceCases[key];
+  activePractice = {exercise, choices: exercise.choices, source: scenarios[key].source};
+  appendTurn('RiskPilot', ['Practice · 1 of 2', exercise.setup]);
+  offerPracticeChoices();
+}
+
+function offerPracticeChoices() {
+  offer(...activePractice.choices.map((choice, index) => ['practice-' + index, choice.label]), ['exit-practice', 'End practice']);
+}
+
+function answerPractice(text, topic) {
+  const {exercise, choices, source} = activePractice;
+  const numbered = text.match(/^(?:option )?([12])[.!]?$/i);
+  const index = topic?.startsWith('practice-') ? Number(topic.slice(9))
+    : numbered ? Number(numbered[1]) - 1 : -1;
+  const exact = choices.find(choice => choice.label.toLowerCase() === text.toLowerCase());
+  const matches = choices.filter(choice => choice.matches.test(text));
+  const choice = choices[index] || exact || (matches.length === 1 ? matches[0] : undefined);
+  if (!choice) {
+    appendTurn('RiskPilot', ['I’m not sure which action you mean. Pick a reply below, or type a short action in your own words.']);
+    return;
+  }
+  if (choice.next) {
+    activePractice.choices = exercise.followUp;
+    appendTurn('RiskPilot', [choice.feedback, 'Practice · 2 of 2', choice.next]);
+    offerPracticeChoices();
+    return;
+  }
+  activePractice = undefined;
+  appendTurn('RiskPilot', [choice.feedback, exercise.takeaway], source);
   offer('practice', 'tutorial', 'workbench');
 }
 
@@ -94,6 +133,7 @@ function reply(text, topic) {
   const cve = text.match(/\bCVE-\d{4}-\d{4,20}\b/i)?.[0].toUpperCase();
   if (cve) {
     activeScenario = undefined;
+    activePractice = undefined;
     appendTurn('RiskPilot', [
       'I found ' + cve + ' in your message. Open the assessment to look up the public record and see what to verify for your system.',
       'If you don’t know a detail about the system, leave it as Unknown.'
@@ -102,21 +142,29 @@ function reply(text, topic) {
     return;
   }
   if (topic === 'practice' || /\b(?:random|practice) scenario\b|\bsurprise me\b/i.test(text)) {
-    const choices = Object.keys(scenarios).filter(key => key !== previousPractice);
-    previousPractice = choices[Math.floor(Math.random() * choices.length)];
-    askScenario(previousPractice, '', true);
+    startPractice();
     return;
   }
-  if (activeScenario) {
-    const {scenario, practice} = activeScenario;
+  if (activePractice && (topic === 'exit-practice' || (!topic && /^(?:exit|stop|quit)(?: practice)?[.!]?$/i.test(text)))) {
+    activePractice = undefined;
+    appendTurn('RiskPilot', ['Practice ended. Tell me what happened, or try another scenario whenever you’re ready.']);
+    offer('practice', 'tutorial', 'workbench');
+    return;
+  }
+  if (activePractice && (!topic || topic.startsWith('practice-'))) {
+    answerPractice(text, topic);
+    return;
+  }
+  if (activeScenario && (!topic || topic.startsWith('answer-'))) {
+    const scenario = activeScenario;
     const choice = topic?.startsWith('answer-') ? scenario.answers[Number(topic.slice(7))]
       : scenario.answers.find(item => item.matches(text));
     if (choice) {
-      finishScenario(scenario, choice, practice);
+      finishScenario(scenario, choice);
       return;
     }
   }
-  const scenarioKey = findScenario(text);
+  const scenarioKey = topic ? undefined : findScenario(text);
   if (scenarioKey) {
     askScenario(scenarioKey, text);
     return;
@@ -129,7 +177,10 @@ function reply(text, topic) {
     else if (/^why should i care|^why is (?:this|cybersecurity|security) important|^what is (?:cybersecurity|security)/i.test(text)) topic = 'why';
     else if (/\b(assess|check|workbench|scan)\b/i.test(text)) topic = 'workbench';
   }
-  if (topic) activeScenario = undefined;
+  if (topic) {
+    activeScenario = undefined;
+    activePractice = undefined;
+  }
   switch (topic) {
     case 'tutorial':
       showLesson(0);
@@ -166,7 +217,7 @@ function reply(text, topic) {
       break;
     default:
       if (activeScenario) {
-        appendTurn('RiskPilot', ['Let’s narrow it down. ' + activeScenario.scenario.opening.at(-1)]);
+        appendTurn('RiskPilot', ['Let’s narrow it down. ' + activeScenario.opening.at(-1)]);
       } else {
         appendTurn('RiskPilot', [
           'Tell me what happened and what might be affected. Was it a missing card, a suspicious link, or an account someone may have accessed?',

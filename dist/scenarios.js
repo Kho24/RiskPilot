@@ -16,7 +16,6 @@ const unfamiliarCharge = /\b(?:(?:unfamiliar|unauthorized|suspicious|fraudulent|
 
 export const scenarios = {
   card: {
-    example: 'I lost my credit card. How worried should I be?',
     matches: text => /\b(?:(?:credit|debit|bank|payment) cards?|my card|my wallet)\b/i.test(text)
       && /\b(?:lost|missing|stolen|stole|misplaced|can['’]t find|left|fraud|charges?|transactions?|shared|entered|gave)\b/i.test(text),
     opening: [
@@ -36,7 +35,6 @@ export const scenarios = {
     ]
   },
   phishing: {
-    example: 'I clicked a suspicious text link. What now?',
     matches: text => /\b(?:phishing|suspicious (?:text|email|link|message)|scam (?:text|email|link|message)|fake (?:text|email|link|login|website|site)|clicked (?:a |the )?link|text (?:with|about) a link)\b/i.test(text),
     opening: [
       'Close the page and avoid going back through the link. If the message claims to be from a company, check through its official app or a site you already know.',
@@ -56,7 +54,6 @@ export const scenarios = {
     ]
   },
   account: {
-    example: 'Someone logged into my email. What should I do?',
     matches: text => /\b(?:hacked|compromised|leaked|exposed|stolen|logged (?:in|into)|signed (?:in|into)|reused|login alert|sign-in alert)\b/i.test(text)
       && /\b(?:email|password|account|login|sign-in|instagram|facebook)\b/i.test(text),
     opening: [
