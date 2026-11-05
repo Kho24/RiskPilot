@@ -1,5 +1,6 @@
 import {findScenario, scenarios} from './scenarios.js';
 import {practiceCases} from './practice.js';
+import {demos, demoLabel} from './demos.js';
 
 const conversation = document.getElementById('conversation');
 const suggestions = document.getElementById('suggestions');
@@ -42,10 +43,10 @@ function appendTurn(speaker, paragraphs, link) {
     paragraph.textContent = text;
     bubble.append(paragraph);
   }
-  if (link) {
+  for (const item of Array.isArray(link) ? link : link ? [link] : []) {
     const anchor = document.createElement('a');
-    anchor.href = link.href;
-    anchor.textContent = link.label;
+    anchor.href = item.href;
+    anchor.textContent = item.label;
     bubble.append(anchor);
   }
   turn.append(label, bubble);
@@ -197,9 +198,11 @@ function reply(text, topic) {
       break;
     case 'demo':
       appendTurn('RiskPilot', [
-        'Try Log4Shell with a fictional customer website. The website uses a component that records what happens in the app. A flaw in that component could let an attacker run commands.',
-        'The sample report shows why the risk is urgent, which facts come from public sources, and what the website owner still needs to verify.'
-      ], {href:'assessment.html?demo=log4shell', label:'Open the prefilled example →'});
+        'Pick a prefilled example. The number measures the software flaw itself. The report also shows the priority for the example system.',
+        'Try Sweet32 to see how changing who can reach a system or what it contains can raise its priority.'
+      ], Object.entries(demos).map(([key, demo]) => ({
+        href:'assessment.html?demo=' + key, label:demoLabel(demo) + ' →'
+      })));
       offer('tutorial', 'why', 'workbench');
       break;
     case 'cve':

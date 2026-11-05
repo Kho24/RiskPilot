@@ -1,20 +1,17 @@
 import {contextLabels, research, assess, plan, review, agentNote} from './engine.js';
+import {demos, demoLabel} from './demos.js';
 
 const get = id => document.getElementById(id);
 const form = get('assessment');
 const queue = [];
 const stages = [...document.querySelectorAll('.state')];
-const sample = {
-  cve:'CVE-2021-44228', asset:'Customer-facing web application', environment:'Production',
-  criticality:'High', sensitivity:'High', exposure:'Internet-facing', version:'Apache Log4j Core 2.14.1'
-};
-let demoLoaded = false;
+const sample = get('sample');
 
 function findingFromForm() {
   const finding = Object.fromEntries(new FormData(form));
   for (const field in finding) finding[field] = finding[field].trim();
   finding.cve = finding.cve.toUpperCase();
-  finding.demo = demoLoaded && finding.cve === sample.cve;
+  finding.demo = demos[sample.value]?.context.cve === finding.cve ? sample.value : undefined;
   return finding;
 }
 
@@ -162,20 +159,36 @@ async function run(findings) {
   }
 }
 
-function loadDemo() {
-  for (const [key, value] of Object.entries(sample)) get(key).value = value;
-  demoLoaded = true;
-  get('message').textContent = 'Demo loaded. The run uses a labeled snapshot for Log4Shell.';
+function showDemoTip(demo) {
+  get('demo-tip').hidden = !demo;
+  get('demo-tip').textContent = demo?.tip || (demo ? 'Run the assessment using a public CVE snapshot and fictional asset details.' : '');
 }
-get('sample').addEventListener('click', loadDemo);
+
+function loadDemo(key) {
+  const demo = Object.hasOwn(demos, key) ? demos[key] : undefined;
+  sample.value = demo ? key : '';
+  showDemoTip(demo);
+  if (demo) {
+    for (const [field, value] of Object.entries(demo.context)) get(field).value = value;
+  }
+}
+
+for (const [key, demo] of Object.entries(demos)) {
+  const option = element('option', demoLabel(demo));
+  option.value = key;
+  sample.append(option);
+}
+sample.addEventListener('change', () => loadDemo(sample.value));
 const entry = new URLSearchParams(location.search);
 const entryCve = entry.get('cve');
-if (entry.get('demo') === 'log4shell') {
-  loadDemo();
+if (Object.hasOwn(demos, entry.get('demo'))) {
+  loadDemo(entry.get('demo'));
 } else if (/^CVE-\d{4}-\d{4,20}$/i.test(entryCve || '')) {
   get('cve').value = entryCve.toUpperCase();
 }
-get('cve').addEventListener('input', () => { demoLoaded = false; });
+get('cve').addEventListener('input', () => {
+  if (sample.value && get('cve').value.trim().toUpperCase() !== demos[sample.value].context.cve) loadDemo('');
+});
 get('queue').addEventListener('click', () => {
   if (!form.reportValidity()) return;
   if (queue.length === 5) {
@@ -184,7 +197,7 @@ get('queue').addEventListener('click', () => {
   }
   queue.push(findingFromForm());
   form.reset();
-  demoLoaded = false;
+  showDemoTip();
   drawQueue();
   get('message').textContent = 'Finding added to the queue.';
   get('cve').focus();

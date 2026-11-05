@@ -14,6 +14,9 @@
 <section class="panel intake" aria-labelledby="intake-title">
 <div class="panel-head"><div class="eyebrow">01 / INTAKE</div><h2 id="intake-title">Finding details</h2><p>Assess one finding or queue up to five for triage.</p></div>
 <form id="assessment">
+<label for="sample">Demo assessment</label>
+<select id="sample" aria-describedby="demo-tip"><option value="">Use my own CVE (live lookup)</option></select>
+<p id="demo-tip" class="demo-tip" hidden></p>
 <label for="cve">CVE identifier <span class="required">*</span></label>
 <input id="cve" name="cve" placeholder="CVE-2021-44228" required maxlength="30" pattern="[Cc][Vv][Ee]-[0-9]{4}-[0-9]{4,}">
 <label for="asset">Asset name</label>
@@ -25,7 +28,7 @@
 <div><label for="exposure">Exposure</label><select id="exposure" name="exposure"><option value="">Unknown</option><option>Internet-facing</option><option>Internal</option><option>Isolated</option></select></div>
 </div>
 <label for="version">Product and installed version</label><input id="version" name="version" placeholder="e.g. Apache Log4j Core 2.14.1" maxlength="160">
-<div class="form-controls"><button type="button" class="link" id="sample">Load Log4Shell demo</button><button type="button" class="secondary" id="queue">+ Queue finding</button></div>
+<div class="form-controls"><button type="button" class="secondary" id="queue">+ Queue finding</button></div>
 <ul id="queued" aria-label="Queued findings"></ul>
 <div class="actions"><button class="primary" id="run" type="submit">Run assessment <span aria-hidden="true">→</span></button><button class="secondary" id="runQueue" type="button" hidden>Run queue</button></div>
 <p id="message" role="status"></p>

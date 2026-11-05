@@ -1,16 +1,8 @@
+import {demos} from './demos.js';
+
 export const contextLabels = {
   asset: 'Asset name', environment: 'Environment', criticality: 'Asset criticality',
   sensitivity: 'Data sensitivity', exposure: 'Exposure', version: 'Product and installed version'
-};
-
-const demo = {
-  state: 'Demo snapshot',
-  description: 'Affected Apache Log4j Core versions can perform attacker-controlled JNDI lookups, which may allow remote code execution.',
-  score: 10, severity: 'CRITICAL', cvssVersion: '3.1', scoreSource: 'NVD demo snapshot', products: ['Apache Log4j Core'],
-  references: [
-    ['NVD record', 'https://nvd.nist.gov/vuln/detail/CVE-2021-44228'],
-    ['Apache security advisory', 'https://logging.apache.org/log4j/2.x/security.html']
-  ]
 };
 
 export function parseCve(record, id) {
@@ -39,9 +31,11 @@ export function parseCve(record, id) {
 }
 
 export async function research(finding, log) {
-  if (finding.demo) {
-    log('Loaded the labeled Log4Shell demo snapshot. No network lookup was made.');
-    return demo;
+  const demo = Object.hasOwn(demos, finding.demo) ? demos[finding.demo] : undefined;
+  if (demo && demo.context.cve === finding.cve) {
+    const {name, description, score, severity, scoreSource, products, references} = demo;
+    log('Loaded the labeled ' + name + ' demo snapshot. No network lookup was made.');
+    return {state: 'Demo snapshot', cvssVersion: '3.1', description, score, severity, scoreSource, products, references};
   }
   const {cve} = finding;
   const [, year, number] = cve.split('-');

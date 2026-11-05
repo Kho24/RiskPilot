@@ -12,3 +12,4 @@
 #chat-form{display:flex;gap:8px;padding:0}#chat-form input{margin:0;height:43px}#chat-form .primary{flex:0 0 auto;gap:8px;align-items:center}
 .chat-hint{font-size:.72rem;margin-top:7px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 @media(max-width:520px){.chat-home{padding:0}.chat{height:100dvh;border:0;border-radius:0}.chat-header,.composer,.conversation{padding-left:14px;padding-right:14px}.turn{max-width:97%}.suggestions{gap:5px}}
+.bubble a{display:block;width:fit-content}
