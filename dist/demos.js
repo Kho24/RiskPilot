@@ -23,7 +23,7 @@ export const demos = {
     description: 'Under certain conditions, an attacker observing large amounts of traffic from a long-running session that uses 3DES can recover portions of the protected data.',
     products: ['TLS services using 3DES'],
     references: [['NVD record', 'https://nvd.nist.gov/vuln/detail/CVE-2016-2183']],
-    tip: 'To see the priority change, run the demo once. Then set Exposure to Internet-facing and both Asset criticality and Data sensitivity to High. Run it again to compare.'
+    tip: 'To see the priority change, run the demo once. Then choose Internet-facing under “Who can reach it?” and set system importance and data privacy to High. Run it again to compare.'
   },
   'php-filter': {
     name: 'PHP filter flaw',

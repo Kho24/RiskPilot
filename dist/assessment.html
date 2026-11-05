@@ -14,20 +14,27 @@
 <section class="panel intake" aria-labelledby="intake-title">
 <div class="panel-head"><div class="eyebrow">01 / INTAKE</div><h2 id="intake-title">Finding details</h2><p>Assess one finding or queue up to five for triage.</p></div>
 <form id="assessment">
-<label for="sample">Demo assessment</label>
-<select id="sample" aria-describedby="demo-tip"><option value="">Use my own CVE (live lookup)</option></select>
-<p id="demo-tip" class="demo-tip" hidden></p>
-<label for="cve">CVE identifier <span class="required">*</span></label>
-<input id="cve" name="cve" placeholder="CVE-2021-44228" required maxlength="30" pattern="[Cc][Vv][Ee]-[0-9]{4}-[0-9]{4,}">
-<label for="asset">Asset name</label>
-<input id="asset" name="asset" placeholder="e.g. Customer-facing web application" maxlength="120">
-<div class="fields">
-<div><label for="environment">Environment</label><select id="environment" name="environment"><option value="">Unknown</option><option>Production</option><option>Staging</option><option>Development</option><option>Other</option></select></div>
-<div><label for="criticality">Asset criticality</label><select id="criticality" name="criticality"><option value="">Unknown</option><option>High</option><option>Medium</option><option>Low</option></select></div>
-<div><label for="sensitivity">Data sensitivity</label><select id="sensitivity" name="sensitivity"><option value="">Unknown</option><option>High</option><option>Medium</option><option>Low</option></select></div>
-<div><label for="exposure">Exposure</label><select id="exposure" name="exposure"><option value="">Unknown</option><option>Internet-facing</option><option>Internal</option><option>Isolated</option></select></div>
+<details class="demo-picker" id="demo-picker">
+<summary>Show demos</summary>
+<p>Choose a sample to fill in the form with a fictional system. You can edit it before you run the assessment.</p>
+<div id="demo-options" class="demo-options"></div>
+</details>
+<div id="demo-selection" class="demo-selection" hidden>
+<p id="demo-tip" class="demo-tip"></p><button id="clear-demo" type="button" class="link">Clear demo and start over</button>
 </div>
-<label for="version">Product and installed version</label><input id="version" name="version" placeholder="e.g. Apache Log4j Core 2.14.1" maxlength="160">
+<label for="cve">CVE ID <span class="required">*</span></label>
+<p id="cve-help" class="field-help">The tracking number for a known software flaw. Look for it in a security alert or try a demo.</p>
+<input id="cve" name="cve" placeholder="CVE-2021-44228" aria-describedby="cve-help" required maxlength="30" pattern="[Cc][Vv][Ee]-[0-9]{4}-[0-9]{4,}">
+<label for="asset">System name <span class="optional">(optional)</span></label>
+<input id="asset" name="asset" placeholder="e.g. Customer-facing web application" maxlength="120">
+<p class="field-help">The next four fields are optional. Leave any you’re unsure about as Unknown.</p>
+<div class="fields">
+<div><label for="environment">Where is it used?</label><select id="environment" name="environment"><option value="">Unknown</option><option value="Production">Live system</option><option value="Staging">Testing before release</option><option value="Development">Development</option><option>Other</option></select></div>
+<div><label for="criticality">How important is the system?</label><select id="criticality" name="criticality"><option value="">Unknown</option><option value="High">High · People depend on it</option><option>Medium</option><option>Low</option></select></div>
+<div><label for="sensitivity">How private is its data?</label><select id="sensitivity" name="sensitivity"><option value="">Unknown</option><option value="High">High · Sensitive information</option><option>Medium</option><option>Low</option></select></div>
+<div><label for="exposure">Who can reach it?</label><select id="exposure" name="exposure"><option value="">Unknown</option><option value="Internet-facing">Internet-facing · Public internet</option><option value="Internal">Internal · Private network</option><option value="Isolated">Isolated · Separated from other systems</option></select></div>
+</div>
+<label for="version">Software name and version <span class="optional">(optional)</span></label><input id="version" name="version" placeholder="e.g. Apache Log4j Core 2.14.1" maxlength="160">
 <div class="form-controls"><button type="button" class="secondary" id="queue">+ Queue finding</button></div>
 <ul id="queued" aria-label="Queued findings"></ul>
 <div class="actions"><button class="primary" id="run" type="submit">Run assessment <span aria-hidden="true">→</span></button><button class="secondary" id="runQueue" type="button" hidden>Run queue</button></div>

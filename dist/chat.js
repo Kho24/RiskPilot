@@ -198,7 +198,7 @@ function reply(text, topic) {
       break;
     case 'demo':
       appendTurn('RiskPilot', [
-        'Pick a prefilled example. The number measures the software flaw itself. The report also shows the priority for the example system.',
+        'Pick an example to preview it in the workbench. The form fills in only after you select Use on the example. The number measures the software flaw itself, and the report shows how urgently to act for the example system.',
         'Try Sweet32 to see how changing who can reach a system or what it contains can raise its priority.'
       ], Object.entries(demos).map(([key, demo]) => ({
         href:'assessment.html?demo=' + key, label:demoLabel(demo) + ' →'

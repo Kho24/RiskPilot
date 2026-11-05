@@ -5,13 +5,14 @@ const get = id => document.getElementById(id);
 const form = get('assessment');
 const queue = [];
 const stages = [...document.querySelectorAll('.state')];
-const sample = get('sample');
+const demoPicker = get('demo-picker');
+let selectedDemo;
 
 function findingFromForm() {
   const finding = Object.fromEntries(new FormData(form));
   for (const field in finding) finding[field] = finding[field].trim();
   finding.cve = finding.cve.toUpperCase();
-  finding.demo = demos[sample.value]?.context.cve === finding.cve ? sample.value : undefined;
+  finding.demo = demos[selectedDemo]?.context.cve === finding.cve ? selectedDemo : undefined;
   return finding;
 }
 
@@ -56,11 +57,12 @@ function renderReport(result, index, batch) {
   const {finding, evidence, assessment, steps, issues, notes} = result;
   const card = element('article', undefined, 'panel report-card');
   const badges = element('div', undefined, 'risk-row');
-  const risk = element('span', assessment.rating + ' risk', 'badge');
+  const risk = element('span', 'System priority · ' + assessment.rating, 'badge');
   risk.dataset.risk = assessment.rating;
-  badges.append(risk, element('span', evidence.score === undefined ? 'CVSS unavailable' : 'CVSS ' + evidence.cvssVersion + ' · ' + evidence.score.toFixed(1) + ' / 10', 'badge'));
+  badges.append(risk, element('span', evidence.score === undefined ? 'Flaw severity unavailable' : 'Flaw severity (CVSS ' + evidence.cvssVersion + ') · ' + evidence.score.toFixed(1) + ' / 10', 'badge'));
   if (finding.demo) badges.append(element('span', 'Demo snapshot', 'badge'));
   card.append(badges, element('h3', (batch ? (index + 1) + '. ' : '') + finding.cve + ' · ' + (finding.asset || 'Unnamed asset')));
+  card.append(element('p', 'CVSS describes the flaw itself. System priority estimates how urgently to act using the score and the details you entered.'));
   card.append(element('p', assessment.reason));
   card.append(element('h4', 'Submitted asset context'));
   const context = element('dl', undefined, 'context');
@@ -159,35 +161,49 @@ async function run(findings) {
   }
 }
 
-function showDemoTip(demo) {
-  get('demo-tip').hidden = !demo;
-  get('demo-tip').textContent = demo?.tip || (demo ? 'Run the assessment using a public CVE snapshot and fictional asset details.' : '');
+function clearDemoSelection() {
+  selectedDemo = undefined;
+  get('demo-selection').hidden = true;
 }
 
 function loadDemo(key) {
-  const demo = Object.hasOwn(demos, key) ? demos[key] : undefined;
-  sample.value = demo ? key : '';
-  showDemoTip(demo);
-  if (demo) {
-    for (const [field, value] of Object.entries(demo.context)) get(field).value = value;
-  }
+  const demo = demos[key];
+  selectedDemo = key;
+  for (const [field, value] of Object.entries(demo.context)) get(field).value = value;
+  get('demo-tip').textContent = 'Loaded ' + demo.name + '. ' + (demo.tip || 'Choose Run assessment to see the report.');
+  get('demo-selection').hidden = false;
+  get('message').textContent = demo.name + ' demo loaded.';
+  get('cve').focus();
+  demoPicker.open = false;
 }
 
-for (const [key, demo] of Object.entries(demos)) {
-  const option = element('option', demoLabel(demo));
-  option.value = key;
-  sample.append(option);
-}
-sample.addEventListener('change', () => loadDemo(sample.value));
 const entry = new URLSearchParams(location.search);
+const suggestedDemo = entry.get('demo');
+for (const [key, demo] of Object.entries(demos)) {
+  const option = element('button', 'Use ' + demoLabel(demo) + (key === suggestedDemo ? ' · Suggested' : ''), 'secondary');
+  option.type = 'button';
+  option.addEventListener('click', () => loadDemo(key));
+  get('demo-options').append(option);
+}
+demoPicker.addEventListener('toggle', () => {
+  demoPicker.querySelector('summary').textContent = demoPicker.open ? 'Hide demos' : 'Show demos';
+});
 const entryCve = entry.get('cve');
-if (Object.hasOwn(demos, entry.get('demo'))) {
-  loadDemo(entry.get('demo'));
-} else if (/^CVE-\d{4}-\d{4,20}$/i.test(entryCve || '')) {
+if (Object.hasOwn(demos, suggestedDemo)) demoPicker.open = true;
+if (/^CVE-\d{4}-\d{4,20}$/i.test(entryCve || '')) {
   get('cve').value = entryCve.toUpperCase();
 }
 get('cve').addEventListener('input', () => {
-  if (sample.value && get('cve').value.trim().toUpperCase() !== demos[sample.value].context.cve) loadDemo('');
+  if (selectedDemo && get('cve').value.trim().toUpperCase() !== demos[selectedDemo].context.cve) {
+    clearDemoSelection();
+    get('message').textContent = 'Demo cleared. Run assessment to look up this CVE.';
+  }
+});
+get('clear-demo').addEventListener('click', () => {
+  form.reset();
+  clearDemoSelection();
+  get('message').textContent = 'Demo cleared. Enter your own CVE or choose another demo.';
+  get('cve').focus();
 });
 get('queue').addEventListener('click', () => {
   if (!form.reportValidity()) return;
@@ -197,7 +213,7 @@ get('queue').addEventListener('click', () => {
   }
   queue.push(findingFromForm());
   form.reset();
-  showDemoTip();
+  clearDemoSelection();
   drawQueue();
   get('message').textContent = 'Finding added to the queue.';
   get('cve').focus();
