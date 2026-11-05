@@ -17,22 +17,22 @@
   </header>
   <div id="conversation" class="conversation" role="log" aria-label="Conversation" aria-relevant="additions">
     <div class="turn"><span class="speaker">RiskPilot</span><div class="bubble">
-      <p><strong>Security starts with knowing what needs your attention.</strong></p>
-      <p>Imagine your website’s software has a flaw. Could someone use it to get in? What could they reach? I’ll help you understand what matters and what to check next.</p>
+      <p><strong>Hey, what happened?</strong></p>
+      <p>Lost a card? Clicked a sketchy link? Tell me what happened in your own words, and we’ll work out how urgent it is and what you can do first.</p>
     </div></div>
   </div>
   <div class="composer">
     <div class="suggestions" id="suggestions" aria-label="Suggested questions">
       <button type="button" class="suggestion" data-topic="tutorial">Start the 2-minute walkthrough</button>
-      <button type="button" class="suggestion" data-topic="why">Why should I care?</button>
+      <button type="button" class="suggestion" data-topic="practice">Surprise me with a scenario</button>
       <button type="button" class="suggestion" data-topic="demo">Try an example</button>
     </div>
     <form id="chat-form">
       <label for="question" class="sr-only">Ask RiskPilot a question</label>
-      <input id="question" name="question" placeholder="Ask a question or enter a CVE ID…" maxlength="300" required autocomplete="off">
+      <input id="question" name="question" placeholder="e.g. I lost my credit card. What now?" maxlength="300" required autocomplete="off">
       <button class="primary" type="submit">Send <span aria-hidden="true">↑</span></button>
     </form>
-    <p class="chat-hint">Guided chat · Use example details and leave out passwords or private information.</p>
+    <p class="chat-hint">Guided chat · Leave out passwords, card numbers, and one-time codes.</p>
     <noscript>Chat requires JavaScript. <a href="assessment.html">Open the assessment workbench</a>.</noscript>
   </div>
 </main>

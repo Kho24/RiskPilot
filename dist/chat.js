@@ -1,13 +1,18 @@
+import {findScenario, scenarios} from './scenarios.js';
+
 const conversation = document.getElementById('conversation');
 const suggestions = document.getElementById('suggestions');
 const form = document.getElementById('chat-form');
 const question = document.getElementById('question');
 let lesson = -1;
+let activeScenario;
+let previousPractice;
 
 const topics = {
   tutorial: 'Start the 2-minute walkthrough',
   why: 'Why should I care?',
   demo: 'Try an example',
+  practice: 'Surprise me with a scenario',
   next: 'Next step',
   cve: 'What is a CVE?',
   workbench: 'I have a vulnerability to check'
@@ -47,14 +52,34 @@ function appendTurn(speaker, paragraphs, link) {
 }
 
 function offer(...options) {
-  suggestions.replaceChildren(...options.map(topic => {
+  suggestions.replaceChildren(...options.map(option => {
+    const [topic, label] = Array.isArray(option) ? option : [option, topics[option]];
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'suggestion';
     button.dataset.topic = topic;
-    button.textContent = topics[topic];
+    button.textContent = label;
     return button;
   }));
+}
+
+function askScenario(key, text, practice = false) {
+  const scenario = scenarios[key];
+  const answer = scenario.answers.find(item => item.inMessage?.(text));
+  if (answer) {
+    finishScenario(scenario, answer, practice);
+    return;
+  }
+  activeScenario = {scenario, practice};
+  const opening = practice ? ['Practice scenario', scenario.example, ...scenario.opening] : scenario.opening;
+  appendTurn('RiskPilot', opening, scenario.source);
+  offer(...scenario.answers.map((item, index) => ['answer-' + index, item.label]), 'practice');
+}
+
+function finishScenario(scenario, answer, practice) {
+  activeScenario = undefined;
+  appendTurn('RiskPilot', practice ? ['Here’s what I’d do in that scenario.', answer.reply] : [answer.reply], scenario.source);
+  offer('practice', 'tutorial', 'workbench');
 }
 
 function showLesson(step) {
@@ -68,6 +93,7 @@ function reply(text, topic) {
   appendTurn('You', [text]);
   const cve = text.match(/\bCVE-\d{4}-\d{4,20}\b/i)?.[0].toUpperCase();
   if (cve) {
+    activeScenario = undefined;
     appendTurn('RiskPilot', [
       'I found ' + cve + ' in your message. Open the assessment to look up the public record and see what to verify for your system.',
       'If you don’t know a detail about the system, leave it as Unknown.'
@@ -75,14 +101,35 @@ function reply(text, topic) {
     offer('cve', 'demo', 'tutorial');
     return;
   }
+  if (topic === 'practice' || /\b(?:random|practice) scenario\b|\bsurprise me\b/i.test(text)) {
+    const choices = Object.keys(scenarios).filter(key => key !== previousPractice);
+    previousPractice = choices[Math.floor(Math.random() * choices.length)];
+    askScenario(previousPractice, '', true);
+    return;
+  }
+  if (activeScenario) {
+    const {scenario, practice} = activeScenario;
+    const choice = topic?.startsWith('answer-') ? scenario.answers[Number(topic.slice(7))]
+      : scenario.answers.find(item => item.matches(text));
+    if (choice) {
+      finishScenario(scenario, choice, practice);
+      return;
+    }
+  }
+  const scenarioKey = findScenario(text);
+  if (scenarioKey) {
+    askScenario(scenarioKey, text);
+    return;
+  }
   if (!topic) {
     if (/^(next|continue|next step)[.!]?$/i.test(text) && lesson >= 0 && lesson < lessons.length - 1) topic = 'next';
     else if (/\b(tutorial|walkthrough|beginner|start|basics)\b/i.test(text)) topic = 'tutorial';
     else if (/\b(example|demo|log4shell)\b/i.test(text)) topic = 'demo';
     else if (/\b(cve|vulnerability|vulnerabilities|patch)\b/i.test(text)) topic = 'cve';
-    else if (/\b(why|care|risk|important|security|cybersecurity|hack)\b/i.test(text)) topic = 'why';
+    else if (/^why should i care|^why is (?:this|cybersecurity|security) important|^what is (?:cybersecurity|security)/i.test(text)) topic = 'why';
     else if (/\b(assess|check|workbench|scan)\b/i.test(text)) topic = 'workbench';
   }
+  if (topic) activeScenario = undefined;
   switch (topic) {
     case 'tutorial':
       showLesson(0);
@@ -118,11 +165,16 @@ function reply(text, topic) {
       offer('cve', 'demo', 'tutorial');
       break;
     default:
-      appendTurn('RiskPilot', [
-        'This guided chat can explain security basics, walk you through an example, or help you look up a vulnerability by CVE ID. Pick a question below to continue.'
-      ]);
-      if (lesson >= 0 && lesson < lessons.length - 1) offer('next', 'why', 'demo', 'workbench');
-      else offer('tutorial', 'why', 'demo', 'workbench');
+      if (activeScenario) {
+        appendTurn('RiskPilot', ['Let’s narrow it down. ' + activeScenario.scenario.opening.at(-1)]);
+      } else {
+        appendTurn('RiskPilot', [
+          'Tell me what happened and what might be affected. Was it a missing card, a suspicious link, or an account someone may have accessed?',
+          'A useful starting point is what someone might have access to, whether you’ve seen any misuse, and what you’ve already done to limit access.'
+        ]);
+        if (lesson >= 0 && lesson < lessons.length - 1) offer('next', 'practice', 'workbench');
+        else offer('practice', 'tutorial', 'workbench');
+      }
   }
 }
 
