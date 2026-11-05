@@ -1,47 +1,40 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Assess vulnerabilities in business context with RiskPilot.">
-<title>RiskPilot | Vulnerability Workbench</title>
-<link rel="stylesheet" href="style.css"><script type="module" src="app.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Learn what security risks mean and what to do about them with RiskPilot.">
+<title>RiskPilot | Your security guide</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="chat.css">
+<script type="module" src="chat.js"></script>
 </head>
-<body>
-<header class="top"><div class="wrap top-inner"><a class="brand" href="./"><span class="logo" aria-hidden="true">◈</span> RiskPilot</a><span class="top-divider"></span><span class="top-label">VULNERABILITY WORKBENCH</span><span class="top-status"><i></i> Assessment console</span></div></header>
-<main class="wrap">
-<section class="hero"><div class="eyebrow"><span>01</span> / SECURITY OPERATIONS</div><h1>Vulnerability assessment<span>.</span></h1><p>Investigate a CVE in the context of your asset and turn the evidence into a remediation plan.</p></section>
-<div class="workspace">
-<section class="panel intake" aria-labelledby="intake-title">
-<div class="panel-head"><div class="eyebrow">01 / INTAKE</div><h2 id="intake-title">Finding details</h2><p>Assess one finding or queue up to five for triage.</p></div>
-<form id="assessment">
-<label for="cve">CVE identifier <span class="required">*</span></label>
-<input id="cve" name="cve" placeholder="CVE-2021-44228" required maxlength="30" pattern="[Cc][Vv][Ee]-[0-9]{4}-[0-9]{4,}">
-<label for="asset">Asset name</label>
-<input id="asset" name="asset" placeholder="e.g. Customer-facing web application" maxlength="120">
-<div class="fields">
-<div><label for="environment">Environment</label><select id="environment" name="environment"><option value="">Unknown</option><option>Production</option><option>Staging</option><option>Development</option><option>Other</option></select></div>
-<div><label for="criticality">Asset criticality</label><select id="criticality" name="criticality"><option value="">Unknown</option><option>High</option><option>Medium</option><option>Low</option></select></div>
-<div><label for="sensitivity">Data sensitivity</label><select id="sensitivity" name="sensitivity"><option value="">Unknown</option><option>High</option><option>Medium</option><option>Low</option></select></div>
-<div><label for="exposure">Exposure</label><select id="exposure" name="exposure"><option value="">Unknown</option><option>Internet-facing</option><option>Internal</option><option>Isolated</option></select></div>
-</div>
-<label for="version">Product and installed version</label><input id="version" name="version" placeholder="e.g. Apache Log4j Core 2.14.1" maxlength="160">
-<div class="form-controls"><button type="button" class="link" id="sample">Load Log4Shell demo</button><button type="button" class="secondary" id="queue">+ Queue finding</button></div>
-<ul id="queued" aria-label="Queued findings"></ul>
-<div class="actions"><button class="primary" id="run" type="submit">Run assessment <span aria-hidden="true">→</span></button><button class="secondary" id="runQueue" type="button" hidden>Run queue</button></div>
-<p id="message" role="status"></p>
-</form>
-</section>
-<aside class="panel pipeline"><div class="panel-head"><div class="eyebrow">02 / ORCHESTRATION</div><h2>Agent workflow</h2><p>Follow each stage from research to review.</p></div>
-<ol id="stages">
-<li><span class="step">01</span><div><strong>Risk Analyst</strong><p>Look up the CVE and assess business impact.</p><span class="state">Ready</span></div></li>
-<li><span class="step">02</span><div><strong>Remediation</strong><p>Plan containment, patching and validation.</p><span class="state">Ready</span></div></li>
-<li><span class="step">03</span><div><strong>Reviewer</strong><p>Flag missing context and check the plan.</p><span class="state">Ready</span></div></li>
-</ol>
-<div class="pipeline-foot"><label class="mode"><input id="ai" type="checkbox"> Use on-device AI when available</label><small id="aiStatus">Rules mode is ready. AI support depends on your browser.</small></div>
-<details><summary>Execution trace</summary><ol id="trace" aria-live="polite"></ol></details>
-</aside>
-</div>
-<section id="results" hidden tabindex="-1" aria-labelledby="results-title"><div class="results-head"><div><div class="eyebrow">03 / OUTPUT</div><h2 id="results-title">Assessment report</h2></div><button class="secondary" id="download" type="button">↓ Download HTML</button></div><div id="report"></div></section>
-<footer><span>◈ &nbsp; RiskPilot</span><span>Advisory only · Final decisions stay with the analyst</span></footer>
+<body class="chat-home">
+<main class="chat" aria-labelledby="chat-title">
+  <header class="chat-header">
+    <span class="logo" aria-hidden="true">◈</span>
+    <div><h1 id="chat-title">RiskPilot</h1><p>Your security guide</p></div>
+  </header>
+  <div id="conversation" class="conversation" role="log" aria-label="Conversation" aria-relevant="additions">
+    <div class="turn"><span class="speaker">RiskPilot</span><div class="bubble">
+      <p><strong>Security starts with knowing what needs your attention.</strong></p>
+      <p>Imagine your website’s software has a flaw. Could someone use it to get in? What could they reach? I’ll help you understand what matters and what to check next.</p>
+    </div></div>
+  </div>
+  <div class="composer">
+    <div class="suggestions" id="suggestions" aria-label="Suggested questions">
+      <button type="button" class="suggestion" data-topic="tutorial">Start the 2-minute walkthrough</button>
+      <button type="button" class="suggestion" data-topic="why">Why should I care?</button>
+      <button type="button" class="suggestion" data-topic="demo">Try an example</button>
+    </div>
+    <form id="chat-form">
+      <label for="question" class="sr-only">Ask RiskPilot a question</label>
+      <input id="question" name="question" placeholder="Ask a question or enter a CVE ID…" maxlength="300" required autocomplete="off">
+      <button class="primary" type="submit">Send <span aria-hidden="true">↑</span></button>
+    </form>
+    <p class="chat-hint">Guided chat · Use example details and leave out passwords or private information.</p>
+    <noscript>Chat requires JavaScript. <a href="assessment.html">Open the assessment workbench</a>.</noscript>
+  </div>
 </main>
-</body></html>
+</body>
+</html>

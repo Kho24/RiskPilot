@@ -162,11 +162,19 @@ async function run(findings) {
   }
 }
 
-get('sample').addEventListener('click', () => {
+function loadDemo() {
   for (const [key, value] of Object.entries(sample)) get(key).value = value;
   demoLoaded = true;
   get('message').textContent = 'Demo loaded. The run uses a labeled snapshot for Log4Shell.';
-});
+}
+get('sample').addEventListener('click', loadDemo);
+const entry = new URLSearchParams(location.search);
+const entryCve = entry.get('cve');
+if (entry.get('demo') === 'log4shell') {
+  loadDemo();
+} else if (/^CVE-\d{4}-\d{4,20}$/i.test(entryCve || '')) {
+  get('cve').value = entryCve.toUpperCase();
+}
 get('cve').addEventListener('input', () => { demoLoaded = false; });
 get('queue').addEventListener('click', () => {
   if (!form.reportValidity()) return;

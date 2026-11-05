@@ -4,6 +4,7 @@ A browser-based vulnerability assessment and remediation workbench. Serve the di
 
     python -m http.server 8080 --directory dist
 
+- Start at the guided chat to learn what a vulnerability is, follow a three-step walkthrough, or open an assessment with a CVE prefilled.
 - Load the Log4Shell demo to try the workflow using a labeled offline snapshot.
 - Enter a CVE manually for a live lookup against the CVE Program public CVE List. The lookup sends the CVE identifier. Asset details stay in the current page.
 - Queue up to five findings for a report ordered by provisional risk. A finding with no usable base score stays undetermined.
