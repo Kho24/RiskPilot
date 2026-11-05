@@ -11,3 +11,7 @@ A browser-based vulnerability assessment and remediation workbench. Serve the di
 - Download the standalone HTML report to retain findings and the execution trace.
 
 The risk formula is a project heuristic and appears in the report. Validate applicability, exposure and remediation decisions with a human analyst.
+
+## GitHub Pages
+
+Push this repository to GitHub on the main branch. In the repository, open **Settings > Pages** and set **Build and deployment > Source** to **GitHub Actions**. In **Actions**, run **Deploy RiskPilot to GitHub Pages** if the first push happened before Pages was enabled. Future pushes to main deploy the static files in dist. The deployment URL appears in the workflow run and under **Settings > Pages**.
