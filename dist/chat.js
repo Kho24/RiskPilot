@@ -247,3 +247,7 @@ suggestions.addEventListener('click', event => {
   reply(button.textContent, button.dataset.topic);
   question.focus();
 });
+
+document.getElementById('chat-js-required').hidden = true;
+form.hidden = false;
+suggestions.hidden = false;

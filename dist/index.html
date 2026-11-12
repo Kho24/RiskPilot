@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Learn what security risks mean and what to do about them with RiskPilot.">
+<meta http-equiv="Content-Security-Policy" content="form-action 'none'">
 <title>RiskPilot | Your security guide</title>
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="chat.css">
@@ -22,18 +23,18 @@
     </div></div>
   </div>
   <div class="composer">
-    <div class="suggestions" id="suggestions" aria-label="Suggested questions">
+    <div class="suggestions" id="suggestions" aria-label="Suggested questions" hidden>
       <button type="button" class="suggestion" data-topic="tutorial">Start the 2-minute walkthrough</button>
       <button type="button" class="suggestion" data-topic="practice">Surprise me with a scenario</button>
       <button type="button" class="suggestion" data-topic="demo">Try an example</button>
     </div>
-    <form id="chat-form">
+    <form id="chat-form" hidden>
       <label for="question" class="sr-only">Ask RiskPilot a question</label>
       <input id="question" name="question" placeholder="e.g. I lost my credit card. What now?" maxlength="300" required autocomplete="off">
       <button class="primary" type="submit">Send <span aria-hidden="true">↑</span></button>
     </form>
     <p class="chat-hint">Guided chat · Leave out passwords, card numbers, and one-time codes.</p>
-    <noscript>Chat requires JavaScript. <a href="assessment.html">Open the assessment workbench</a>.</noscript>
+    <p id="chat-js-required">JavaScript is required to use RiskPilot.</p>
   </div>
 </main>
 </body>

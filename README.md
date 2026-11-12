@@ -13,6 +13,19 @@ A browser-based vulnerability assessment and remediation workbench. Serve the di
 
 The risk formula is a project heuristic and appears in the report. Validate applicability, exposure and remediation decisions with a human analyst.
 
+## Milestone II evaluation
+
+From the repository root, run `node evaluation/run.mjs` with Node.js 24. The runner executes the 10 cases in `evaluation/cases.json` three times each with a fresh app instance and fresh test state. It writes `evaluation/results.json` and `evaluation/results.md` and exits with status 1 if any trial fails.
+
+For a quick check, run `node evaluation/run.mjs --smoke`. This executes four selected cases once each and writes separate `smoke-results.json` and `smoke-results.md` files in the same directory.
+
+The harness exercises the actual assessment form, engine, and approval/export handlers using a simulated DOM and fixed network responses. It checks structured properties such as CVE identity, source state, numeric score and priority, missing fields, request method, and whether an export was produced. The nonexistent-record fixture represents a 404; the published-record fixture is synthetic. The injection case checks rules-mode behavior. Live network reachability, native browser downloads, and on-device AI behavior require separate checks.
+
+Provisional metric definitions pending instructor confirmation
+
+- `pass@1` = number of evaluated cases that pass trial 1 divided by the number of evaluated cases.
+- `pass^3` = number of evaluated cases that pass all three trials divided by the number of evaluated cases. Smoke mode leaves this unmeasured.
+
 ## GitHub Pages
 
 Push this repository to GitHub on the main branch. In the repository, open **Settings > Pages** and set **Build and deployment > Source** to **GitHub Actions**. In **Actions**, run **Deploy RiskPilot to GitHub Pages** if the first push happened before Pages was enabled. Future pushes to main deploy the static files in dist. The deployment URL appears in the workflow run and under **Settings > Pages**.
