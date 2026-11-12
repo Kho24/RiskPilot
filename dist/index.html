@@ -33,6 +33,12 @@
       <input id="question" name="question" placeholder="e.g. I lost my credit card. What now?" maxlength="300" required autocomplete="off">
       <button class="primary" type="submit">Send <span aria-hidden="true">↑</span></button>
     </form>
+    <div id="chat-gemini-controls" hidden>
+      <label><input id="chat-gemini" type="checkbox" checked> Use Gemini for chat</label>
+      <p class="chat-hint">Gemini receives the message you send. Leave out private information.</p>
+      <p id="chat-gemini-status" role="status"></p>
+      <div id="chat-gemini-challenge" hidden></div>
+    </div>
     <p class="chat-hint">Guided chat · Leave out passwords, card numbers, and one-time codes.</p>
     <p id="chat-js-required">JavaScript is required to use RiskPilot.</p>
   </div>

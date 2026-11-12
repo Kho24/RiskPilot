@@ -1,11 +1,15 @@
 import {findScenario, scenarios} from './scenarios.js';
 import {practiceCases} from './practice.js';
 import {demos, demoLabel} from './demos.js';
+import {publicGeminiAvailable, setupGemini} from './gemini.js';
 
 const conversation = document.getElementById('conversation');
 const suggestions = document.getElementById('suggestions');
 const form = document.getElementById('chat-form');
 const question = document.getElementById('question');
+const geminiToggle = document.getElementById('chat-gemini');
+const geminiChat = setupGemini(document.getElementById('chat-gemini-challenge'), document.getElementById('chat-gemini-status'), 'chat');
+let sending = false;
 let lesson = -1;
 let activeScenario;
 let activePractice;
@@ -232,18 +236,37 @@ function reply(text, topic) {
   }
 }
 
-form.addEventListener('submit', event => {
+form.addEventListener('submit', async event => {
   event.preventDefault();
   const text = question.value.trim();
-  if (!text) return;
-  reply(text);
+  if (!text || sending) return;
   form.reset();
-  question.focus();
+  sending = true;
+  const controls = [question, form.querySelector('button[type=submit]'), geminiToggle];
+  controls.forEach(control => { control.disabled = true; });
+  try {
+    if (publicGeminiAvailable && geminiToggle.checked) {
+      const answer = await geminiChat({message: text});
+      const cve = text.match(/\bCVE-\d{4}-\d{4,20}\b/i)?.[0].toUpperCase();
+      appendTurn('You', [text]);
+      appendTurn('RiskPilot · Gemini', [answer], cve
+        ? {href: 'assessment.html?cve=' + encodeURIComponent(cve), label: 'Assess ' + cve}
+        : undefined);
+    } else {
+      reply(text);
+    }
+  } catch {
+    reply(text);
+  } finally {
+    sending = false;
+    controls.forEach(control => { control.disabled = false; });
+    question.focus();
+  }
 });
 
 suggestions.addEventListener('click', event => {
   const button = event.target.closest('button[data-topic]');
-  if (!button) return;
+  if (!button || sending) return;
   reply(button.textContent, button.dataset.topic);
   question.focus();
 });
@@ -251,3 +274,4 @@ suggestions.addEventListener('click', event => {
 document.getElementById('chat-js-required').hidden = true;
 form.hidden = false;
 suggestions.hidden = false;
+document.getElementById('chat-gemini-controls').hidden = !publicGeminiAvailable;
