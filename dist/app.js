@@ -7,6 +7,7 @@ const queue = [];
 const stages = [...document.querySelectorAll('.state')];
 const demoPicker = get('demo-picker');
 let selectedDemo;
+let approval = null;
 
 function findingFromForm() {
   const finding = Object.fromEntries(new FormData(form));
@@ -94,7 +95,15 @@ function renderReport(result, index, batch) {
   return card;
 }
 
+function setApproval(status) {
+  approval = status;
+  get('approval-status').textContent = status || '';
+  get('approval-actions').hidden = status !== 'Draft / Pending Human Review';
+  get('download').disabled = status !== 'Human Approved';
+}
+
 async function run(findings) {
+  setApproval(null);
   const controls = [...document.querySelectorAll('form input, form select, form button, #ai')];
   controls.forEach(control => {control.disabled = true;});
   get('results').hidden = true;
@@ -150,6 +159,10 @@ async function run(findings) {
     }
     results.sort((a, b) => (b.assessment.priority ?? -1) - (a.assessment.priority ?? -1));
     get('report').replaceChildren(...results.map((result, index) => renderReport(result, index, results.length > 1)));
+    get('approval-detail').textContent = results.length === 1
+      ? 'Review the finding above before deciding whether to finalize this advisory.'
+      : 'Your decision applies to all findings in this report. Review each one before finalizing.';
+    setApproval('Draft / Pending Human Review');
     get('results').hidden = false;
     get('message').textContent = results.length === 1 ? 'Assessment complete.' : 'Queue complete. Reports ordered by provisional priority.';
     get('results').focus();
@@ -223,12 +236,27 @@ form.addEventListener('submit', event => {
   run([findingFromForm()]);
 });
 get('runQueue').addEventListener('click', () => run([...queue]));
+for (const [button, status, detail] of [
+  ['approve', 'Human Approved', 'You can download the final advisory. Approval only applies to this report.'],
+  ['request-revision', 'Revision Requested', 'Export is blocked. Update the finding details or queue and run a new assessment for review.'],
+  ['reject', 'Rejected', 'This recommendation was rejected. Final export is blocked.']
+]) {
+  get(button).addEventListener('click', () => {
+    if (approval !== 'Draft / Pending Human Review') return;
+    setApproval(status);
+    get('approval-detail').textContent = detail;
+    log('Human approval gate: ' + status + '.');
+    get('approval-status').focus();
+  });
+}
+
 get('download').addEventListener('click', () => {
+  if (approval !== 'Human Approved') return;
   const report = get('report').innerHTML;
   const trace = get('trace').outerHTML;
   const html = '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
     + '<title>RiskPilot assessment report</title><style>body{font:16px/1.5 system-ui;max-width:900px;margin:40px auto;padding:0 20px;color:#172028}article{border-top:1px solid #aab;padding:20px 0;overflow-wrap:anywhere}.risk-row{display:flex;flex-wrap:wrap;gap:8px}.badge{background:#e6efe8;border-radius:5px;padding:3px 8px;font-weight:700}dt{font-weight:700}dd{margin-left:0}a{color:#14547c}@media print{h3,h4{break-after:avoid}}</style>'
-    + '<main><h1>RiskPilot assessment report</h1><p>Generated ' + new Date().toISOString() + ' · Analyst review required</p>'
+    + '<main><h1>RiskPilot assessment report</h1><p>Generated ' + new Date().toISOString() + ' · Human Approved (advisory only)</p>'
     + report + '<h2>Execution trace</h2>' + trace + '</main></html>';
   const url = URL.createObjectURL(new Blob([html], {type:'text/html;charset=utf-8'}));
   const link = element('a');
@@ -237,3 +265,6 @@ get('download').addEventListener('click', () => {
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
+
+get('assessment-js-required').hidden = true;
+form.hidden = false;

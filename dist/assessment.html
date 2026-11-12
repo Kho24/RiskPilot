@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Assess vulnerabilities in business context with RiskPilot.">
+<meta http-equiv="Content-Security-Policy" content="form-action 'none'">
 <title>RiskPilot | Vulnerability Workbench</title>
 <link rel="stylesheet" href="style.css"><script type="module" src="app.js"></script>
 </head>
@@ -13,7 +14,8 @@
 <div class="workspace">
 <section class="panel intake" aria-labelledby="intake-title">
 <div class="panel-head"><div class="eyebrow">01 / INTAKE</div><h2 id="intake-title">Finding details</h2><p>Assess one finding or queue up to five for triage.</p></div>
-<form id="assessment">
+<p id="assessment-js-required" class="panel-head">JavaScript is required to use RiskPilot.</p>
+<form id="assessment" hidden>
 <details class="demo-picker" id="demo-picker">
 <summary>Show demos</summary>
 <p>Choose a sample to fill in the form with a fictional system. You can edit it before you run the assessment.</p>
@@ -51,7 +53,17 @@
 <details><summary>Execution trace</summary><ol id="trace" aria-live="polite"></ol></details>
 </aside>
 </div>
-<section id="results" hidden tabindex="-1" aria-labelledby="results-title"><div class="results-head"><div><div class="eyebrow">03 / OUTPUT</div><h2 id="results-title">Assessment report</h2></div><button class="secondary" id="download" type="button">↓ Download HTML</button></div><div id="report"></div></section>
+<section id="results" hidden tabindex="-1" aria-labelledby="results-title"><div class="results-head"><div><div class="eyebrow">03 / OUTPUT</div><h2 id="results-title">Assessment report</h2><p id="approval-status" role="status" tabindex="-1"></p></div><button class="secondary" id="download" type="button" disabled aria-describedby="approval-status">↓ Download HTML</button></div><div id="report"></div>
+<section class="panel report-card" aria-labelledby="approval-title">
+<h3 id="approval-title">Human approval</h3>
+<p id="approval-detail">Review the findings above before deciding whether to finalize this advisory.</p>
+<div id="approval-actions" class="actions" hidden>
+<button class="secondary" id="approve" type="button">Approve recommendation</button>
+<button class="secondary" id="request-revision" type="button">Request revision</button>
+<button class="secondary" id="reject" type="button">Reject recommendation</button>
+</div>
+</section>
+</section>
 <footer><span>◈ &nbsp; RiskPilot</span><span>Advisory only · Final decisions stay with the analyst</span></footer>
 </main>
 </body></html>
