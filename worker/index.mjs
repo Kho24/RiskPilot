@@ -88,14 +88,15 @@ export default {
           contents: [{parts: [{text: JSON.stringify(modelInput)}]}],
           generationConfig: {maxOutputTokens: 512, thinkingConfig: {thinkingLevel: 'low'}}
         }),
-        signal: AbortSignal.timeout(10000)
+        signal: AbortSignal.timeout(25000)
       });
       if (!result.ok) return reply(502, {error: 'Gemini note unavailable'});
       const data = await result.json();
       const note = data.candidates?.[0]?.content?.parts?.filter(part => !part.thought && typeof part.text === 'string')
         .map(part => part.text).join(' ').trim().slice(0, action === 'chat' ? 1600 : 600);
       return note ? reply(200, {note}) : reply(502, {error: 'Gemini note unavailable'});
-    } catch {
+    } catch (error) {
+      if (error?.name === 'TimeoutError') return reply(504, {error: 'Upstream request timed out'});
       return reply(503, {error: 'Gemini note unavailable'});
     }
   }

@@ -46,7 +46,7 @@ export function setupGemini(container, status, action) {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({...payload, token}),
-        signal: AbortSignal.timeout(16000)
+        signal: AbortSignal.timeout(40000)
       });
       if (!response.ok) throw new Error('Gemini unavailable');
       const {note} = await response.json();
