@@ -52,8 +52,9 @@
 <div class="pipeline-foot"><label class="mode"><input id="ai" type="checkbox"> Use on-device AI when available</label><small id="aiStatus">Rules mode is ready. AI support depends on your browser.</small></div>
 <details><summary>Execution trace</summary><ol id="trace" aria-live="polite"></ol></details>
 <div class="pipeline-foot">
-<label class="mode"><input id="gemini" type="checkbox"> Add a Gemini Risk Analyst note</label>
-<small id="gemini-status">Available for one live CVE with a published score. Sends the CVE ID and score to Google.</small>
+<label class="mode"><input id="gemini" type="checkbox" checked> Use Gemini for the Risk Analyst note</label>
+<p>Available for a single live CVE with a published score. Sends only the CVE ID and score to Google.</p>
+<small id="gemini-status" role="status"></small>
 <div id="gemini-challenge" hidden></div>
 </div>
 </aside>

@@ -1,13 +1,13 @@
 import {contextLabels, research, assess, plan, review, agentNote} from './engine.js';
 import {demos, demoLabel} from './demos.js';
-import {setupGemini} from './gemini.js';
+import {publicGeminiAvailable, setupGemini} from './gemini.js';
 
 const get = id => document.getElementById(id);
 const form = get('assessment');
 const queue = [];
 const stages = [...document.querySelectorAll('.state')];
 const demoPicker = get('demo-picker');
-const geminiNote = setupGemini(get('gemini'), get('gemini-challenge'), get('gemini-status'));
+const geminiNote = setupGemini(get('gemini-challenge'), get('gemini-status'), 'risk-note');
 let selectedDemo;
 let approval = null;
 
@@ -146,7 +146,7 @@ async function run(findings) {
       const evidence = await research(finding, log);
       const assessment = assess(finding, evidence);
       let cloudNote;
-      if (get('gemini').checked) {
+      if (publicGeminiAvailable && get('gemini').checked) {
         if (findings.length === 1 && evidence.state === 'PUBLISHED' && Number.isFinite(evidence.score)) {
           try {
             cloudNote = await geminiNote(finding.cve, evidence.score);

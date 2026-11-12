@@ -13,6 +13,8 @@ A browser-based vulnerability assessment and remediation workbench. Serve the di
 
 The risk formula is a project heuristic and appears in the report. Validate applicability, exposure and remediation decisions with a human analyst.
 
+On the public site, Gemini is enabled by default for typed chat messages and the Risk Analyst note for a single live CVE with a published score. The homepage sends only the current message, and the assessment sends only the CVE ID and score. Cloudflare Turnstile verifies the browser before the Worker sends either payload to Google. Leave private information out of chat. Both screens have a Gemini toggle and fall back to their built-in workflows if Gemini is unavailable.
+
 ## Milestone II evaluation
 
 From the repository root, run `node evaluation/run.mjs` with Node.js 24. The runner executes the 10 cases in `evaluation/cases.json` three times each with a fresh app instance and fresh test state. It writes `evaluation/results.json` and `evaluation/results.md` and exits with status 1 if any trial fails.
