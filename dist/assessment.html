@@ -51,6 +51,11 @@
 </ol>
 <div class="pipeline-foot"><label class="mode"><input id="ai" type="checkbox"> Use on-device AI when available</label><small id="aiStatus">Rules mode is ready. AI support depends on your browser.</small></div>
 <details><summary>Execution trace</summary><ol id="trace" aria-live="polite"></ol></details>
+<div class="pipeline-foot">
+<label class="mode"><input id="gemini" type="checkbox"> Add a Gemini Risk Analyst note</label>
+<small id="gemini-status">Available for one live CVE with a published score. Sends the CVE ID and score to Google.</small>
+<div id="gemini-challenge" hidden></div>
+</div>
 </aside>
 </div>
 <section id="results" hidden tabindex="-1" aria-labelledby="results-title"><div class="results-head"><div><div class="eyebrow">03 / OUTPUT</div><h2 id="results-title">Assessment report</h2><p id="approval-status" role="status" tabindex="-1"></p></div><button class="secondary" id="download" type="button" disabled aria-describedby="approval-status">↓ Download HTML</button></div><div id="report"></div>

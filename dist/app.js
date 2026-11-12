@@ -1,11 +1,13 @@
 import {contextLabels, research, assess, plan, review, agentNote} from './engine.js';
 import {demos, demoLabel} from './demos.js';
+import {setupGemini} from './gemini.js';
 
 const get = id => document.getElementById(id);
 const form = get('assessment');
 const queue = [];
 const stages = [...document.querySelectorAll('.state')];
 const demoPicker = get('demo-picker');
+const geminiNote = setupGemini(get('gemini'), get('gemini-challenge'), get('gemini-status'));
 let selectedDemo;
 let approval = null;
 
@@ -55,7 +57,7 @@ function list(items, ordered = false) {
 }
 
 function renderReport(result, index, batch) {
-  const {finding, evidence, assessment, steps, issues, notes} = result;
+  const {finding, evidence, assessment, steps, issues, notes, cloudNote} = result;
   const card = element('article', undefined, 'panel report-card');
   const badges = element('div', undefined, 'risk-row');
   const risk = element('span', 'System priority · ' + assessment.rating, 'badge');
@@ -88,6 +90,7 @@ function renderReport(result, index, batch) {
   }
   card.append(sources);
   if (notes[0]) card.append(element('h4', 'Risk Analyst AI note'), element('p', notes[0]));
+  if (cloudNote) card.append(element('h4', 'Gemini Risk Analyst note'), element('p', cloudNote));
   card.append(element('h4', 'Remediation plan'), list(steps, true));
   if (notes[1]) card.append(element('h4', 'Remediation AI note'), element('p', notes[1]));
   card.append(element('h4', 'Reviewer checks'), list(issues));
@@ -104,7 +107,7 @@ function setApproval(status) {
 
 async function run(findings) {
   setApproval(null);
-  const controls = [...document.querySelectorAll('form input, form select, form button, #ai')];
+  const controls = [...document.querySelectorAll('form input, form select, form button, #ai, #gemini')];
   controls.forEach(control => {control.disabled = true;});
   get('results').hidden = true;
   get('trace').replaceChildren();
@@ -142,6 +145,19 @@ async function run(findings) {
       setStage(0, 'Running');
       const evidence = await research(finding, log);
       const assessment = assess(finding, evidence);
+      let cloudNote;
+      if (get('gemini').checked) {
+        if (findings.length === 1 && evidence.state === 'PUBLISHED' && Number.isFinite(evidence.score)) {
+          try {
+            cloudNote = await geminiNote(finding.cve, evidence.score);
+            log('Risk Analyst: Gemini note generated.');
+          } catch {
+            log('Risk Analyst: Gemini note unavailable. Assessment retained.');
+          }
+        } else {
+          log('Risk Analyst: Gemini notes require one live CVE with a published score.');
+        }
+      }
       await note(0, 'Risk Analyst', 'Explain the provisional rating and the most important uncertainty.', {finding, evidence, assessment});
       log('Risk Analyst · ' + assessment.rating + ' provisional risk.');
       setStage(0, 'Complete');
@@ -155,7 +171,7 @@ async function run(findings) {
       await note(2, 'Reviewer', 'Flag any unsupported claim or omission in the proposed notes and plan.', {finding, evidence, assessment, steps, issues, priorNotes: notes});
       log('Reviewer · ' + issues.length + ' verification checks recorded.');
       setStage(2, 'Complete');
-      results.push({finding, evidence, assessment, steps, issues, notes});
+      results.push({finding, evidence, assessment, steps, issues, notes, cloudNote});
     }
     results.sort((a, b) => (b.assessment.priority ?? -1) - (a.assessment.priority ?? -1));
     get('report').replaceChildren(...results.map((result, index) => renderReport(result, index, results.length > 1)));
