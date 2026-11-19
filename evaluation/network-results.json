@@ -1,0 +1,41 @@
+{
+  "generatedAt": "2026-11-19T17:54:55.153Z",
+  "scope": "Read-only HTTP reachability only. No browser rendering or live Gemini inference.",
+  "results": [
+    {
+      "id": "homepage",
+      "url": "https://kho24.github.io/RiskPilot/",
+      "reachable": false,
+      "error": "ENOTFOUND",
+      "manualRequired": true
+    },
+    {
+      "id": "assessment",
+      "url": "https://kho24.github.io/RiskPilot/assessment.html",
+      "reachable": false,
+      "error": "ENOTFOUND",
+      "manualRequired": true
+    },
+    {
+      "id": "deployed-app",
+      "url": "https://kho24.github.io/RiskPilot/app.js",
+      "reachable": false,
+      "error": "ENOTFOUND",
+      "manualRequired": true
+    },
+    {
+      "id": "cve-source",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2021/44xxx/CVE-2021-44228.json",
+      "reachable": false,
+      "error": "ENOTFOUND",
+      "manualRequired": true
+    },
+    {
+      "id": "nvd-source",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=CVE-2021-44228",
+      "reachable": false,
+      "error": "ENOTFOUND",
+      "manualRequired": true
+    }
+  ]
+}

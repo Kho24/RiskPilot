@@ -1,0 +1,82 @@
+{
+  "generatedAt": "2026-11-19T18:03:19.693Z",
+  "scope": "Clean temporary source folder; tracked files plus explicit current evaluation/security overlays. No .wrangler or credentials copied. No npm dependencies installed.",
+  "cloneLimitation": "Local git clone failed because Git could not create its MSYS directory object under sandbox permissions. A clean source folder was used instead. C:/workspace was also not writable.",
+  "temporaryFolder": "C:\\Users\\School\\AppData\\Local\\Packages\\openai.codex_2p2nqsd0c76g0\\AC\\#!sandbox.{980e0972-9692-4ca1-b397-922e48c5ed77}\\Temp\\riskpilot-final-folder-GNN7Zh",
+  "checks": [
+    {
+      "command": "node --version",
+      "expectedExit": 0,
+      "actualExit": 0,
+      "matchedExpectedExit": true,
+      "output": "v24.22.1",
+      "error": null
+    },
+    {
+      "command": "node evaluation/run.mjs",
+      "expectedExit": 0,
+      "actualExit": 0,
+      "matchedExpectedExit": true,
+      "output": "full: 30/30 trials passed. Reports: evaluation/results.{json,md}",
+      "error": null
+    },
+    {
+      "command": "node evaluation/run.mjs --smoke",
+      "expectedExit": 0,
+      "actualExit": 0,
+      "matchedExpectedExit": true,
+      "output": "smoke: 4/4 trials passed. Reports: evaluation/smoke-results.{json,md}",
+      "error": null
+    },
+    {
+      "command": "node evaluation/run-final.mjs",
+      "expectedExit": 1,
+      "actualExit": 1,
+      "matchedExpectedExit": true,
+      "output": "worker-verification-timeout: pass, pass, pass\n{\"offline\":{\"cases\":38,\"trials\":114,\"passed\":99,\"failed\":15,\"manualRequired\":0,\"pass@1\":0.868421052631579,\"pass^3\":0.868421052631579},\"live\":{\"cases\":10,\"trials\":30,\"passed\":0,\"failed\":0,\"manualRequired\":30,\"pass@1\":null,\"pass^3\":null}}",
+      "error": null
+    },
+    {
+      "command": "py -m http.server --help",
+      "expectedExit": 0,
+      "actualExit": 112,
+      "matchedExpectedExit": false,
+      "output": null,
+      "error": "No installed Python found!"
+    },
+    {
+      "command": "bundled Python -m http.server --help",
+      "expectedExit": 0,
+      "actualExit": 0,
+      "matchedExpectedExit": true,
+      "output": "Static-server CLI supports --directory",
+      "error": null
+    }
+  ],
+  "offline": {
+    "cases": 38,
+    "trials": 114,
+    "passed": 99,
+    "failed": 15,
+    "manualRequired": 0,
+    "pass@1": 0.868421052631579,
+    "pass^3": 0.868421052631579
+  },
+  "live": {
+    "cases": 10,
+    "trials": 30,
+    "passed": 0,
+    "failed": 0,
+    "manualRequired": 30,
+    "pass@1": null,
+    "pass^3": null
+  },
+  "knownFailedCases": [
+    "api-assessment-success",
+    "api-assessment-missing-context",
+    "api-assessment-injection",
+    "api-poisoned-source",
+    "chat-unsupported-claim"
+  ],
+  "previewLimitation": "Standard Windows launcher has no installed Python interpreter here. The bundled-interpreter probe is recorded separately. Actual browser/TCP preview remains unverified."
+}

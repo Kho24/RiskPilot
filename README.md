@@ -1,33 +1,154 @@
 # RiskPilot
 
-A browser-based vulnerability assessment and remediation workbench. Serve the dist folder over HTTP, or HTTPS for supported on-device AI. For example, with Python installed, run this command from the project folder and open http://localhost:8080.
+RiskPilot provides security guidance and a vulnerability workbench. It researches
+public CVEs, calculates provisional priority, proposes remediation and flags
+missing context. A human must approve the report before final advisory export.
 
-    python -m http.server 8080 --directory dist
+- Security Guide: https://kho24.github.io/RiskPilot/
+- Vulnerability Workbench: https://kho24.github.io/RiskPilot/assessment.html
 
-- Start at the guided chat to learn what a vulnerability is, follow a three-step walkthrough, or open an assessment with a CVE prefilled.
-- Open Show demos, then choose Use on Log4Shell, Sweet32, or the PHP filter flaw. Each uses an attributed offline snapshot and editable fictional asset context.
-- Enter a CVE manually for a live lookup against the CVE Program public CVE List. The lookup sends the CVE identifier. Asset details stay in the current page.
-- Queue up to five findings for a report ordered by provisional risk. A finding with no usable base score stays undetermined.
-- Select on-device AI to request supplemental notes from the Risk Analyst, Remediation and Reviewer stages. The app uses the browser Prompt API when a model is installed and available, and falls back to the rules engine otherwise.
-- Download the standalone HTML report to retain findings and the execution trace.
+## Current review status
 
-The risk formula is a project heuristic and appears in the report. Validate applicability, exposure and remediation decisions with a human analyst.
+Final candidate recommendation: **DO NOT SHIP YET**. The checkout has an
+assessment-to-Gemini request-format defect and no application validation of
+unsupported model action claims. Current evaluation records these failures.
+Live model trials and dashboard/browser verification remain outstanding.
+See security/AUDIT.md and security/SECURITY-REVIEW.md.
 
-On the public site, Gemini is enabled by default for typed chat messages and the Risk Analyst note for a single live CVE with a published score. The homepage sends only the current message, and the assessment sends only the CVE ID and score. Cloudflare Turnstile verifies the browser before the Worker sends either payload to Google. Leave private information out of chat. Both screens have a Gemini toggle and fall back to their built-in workflows if Gemini is unavailable.
+## Prerequisites and clean setup
 
-## Milestone II evaluation
+- Git to clone the repository.
+- Node.js 24 or newer for evaluation. Tests use built-in modules only.
+- Python 3 for the static preview.
+- Chrome or Edge for browser verification. Optional on-device AI additionally
+  needs the browser Prompt API and an available local model.
+- Live Gemini needs network access, the deployed Cloudflare Worker, real
+  Turnstile verification and Google quota for the configured model.
 
-From the repository root, run `node evaluation/run.mjs` with Node.js 24. The runner executes the 10 cases in `evaluation/cases.json` three times each with a fresh app instance and fresh test state. It writes `evaluation/results.json` and `evaluation/results.md` and exits with status 1 if any trial fails.
+From a terminal:
 
-For a quick check, run `node evaluation/run.mjs --smoke`. This executes four selected cases once each and writes separate `smoke-results.json` and `smoke-results.md` files in the same directory.
+    git clone https://github.com/Kho24/RiskPilot.git
+    cd RiskPilot
+    git switch feature/gemini-risk-note
+    node --version
 
-The harness exercises the actual assessment form, engine, and approval/export handlers using a simulated DOM and fixed network responses. It checks structured properties such as CVE identity, source state, numeric score and priority, missing fields, request method, and whether an export was produced. The nonexistent-record fixture represents a 404; the published-record fixture is synthetic. The injection case checks rules-mode behavior. Live network reachability, native browser downloads, and on-device AI behavior require separate checks.
+Use the exact commit supplied with the submission when available.
+No npm install or secret is required for the preview or offline evaluation.
 
-Provisional metric definitions pending instructor confirmation
+## Run locally
 
-- `pass@1` = number of evaluated cases that pass trial 1 divided by the number of evaluated cases.
-- `pass^3` = number of evaluated cases that pass all three trials divided by the number of evaluated cases. Smoke mode leaves this unmeasured.
+From the repository root, on Windows with Python installed:
 
-## GitHub Pages
+    py -m http.server 8080 --bind 127.0.0.1 --directory dist
 
-Push this repository to GitHub on the main branch. In the repository, open **Settings > Pages** and set **Build and deployment > Source** to **GitHub Actions**. In **Actions**, run **Deploy RiskPilot to GitHub Pages** if the first push happened before Pages was enabled. Future pushes to main deploy the static files in dist. The deployment URL appears in the workflow run and under **Settings > Pages**.
+On macOS/Linux:
+
+    python3 -m http.server 8080 --bind 127.0.0.1 --directory dist
+
+Leave the terminal open and visit http://127.0.0.1:8080/ or
+http://127.0.0.1:8080/assessment.html in your desktop browser. Ctrl+C stops
+the preview. The navigation links switch between the two pages.
+
+Open Show demos for a fictional example, or enter a CVE for a live read-only
+lookup. Leave missing context as Unknown. After the three stages finish,
+inspect the draft. Approve enables Download HTML. Reject and Request Revision
+block export. A new run clears approval.
+
+Localhost uses the built-in fallback for Gemini. The public bridge is restricted
+to the existing public origin. Optional on-device AI depends on browser support.
+
+## Gemini and Cloudflare architecture
+
+GitHub Pages serves dist/. Typed chat goes through the fixed Cloudflare Worker
+after Turnstile verification. The Worker checks origin, schema, size,
+verification hostname/action and its IP limiter before Google generateContent.
+Only the current message is sent for chat. Intended assessment input is only
+CVE ID and numeric score for one live published finding. The current caller
+defect prevents that path from reaching Google in integration tests.
+Demo reports skip cloud notes.
+
+Risk scoring, Remediation and Reviewer use the built-in engine. Optional
+on-device AI produces local notes using asset/evidence/prior local-stage data.
+The cloud Gemini note is not reviewed by these rules. The model has no
+callable network, shell, patching or infrastructure tools.
+
+Required Worker secret/configuration names:
+
+- GEMINI_API_KEY — Cloudflare secret binding.
+- TURNSTILE_SECRET_KEY — Cloudflare secret binding.
+- GEMINI_MODEL — model configuration in worker/wrangler.toml.
+- NOTE_RATE_LIMIT — rate-limiter binding, not a secret.
+
+The public site key and Worker URL are in dist/gemini.js. Private keys belong
+in Cloudflare secret storage. Never put them in dist/, Git, browser JavaScript,
+evaluation records or committed .dev.vars files. The grader needs no API key.
+
+An owner preparing a separate Worker environment needs Cloudflare account
+access, a Google project, a Turnstile site for the permitted hostname and
+Wrangler v4.36 or later. Existing paths and allowed-origin checks target the
+current public deployment. This review does not deploy or change that setup.
+
+## Run the final evaluation
+
+    node evaluation/run-final.mjs
+
+The runner executes the retained 10 Milestone II cases plus 28 API/security
+cases, three times each with fresh page, widget and fixture state. It runs
+actual app handlers, Gemini bridge and Worker code against synthetic
+Google/source/Turnstile responses and dummy credentials. Results are:
+
+- evaluation/final-results.json — outputs, criteria, failures and source hashes.
+- evaluation/final-results.md — metrics, trial table and failure analysis.
+
+Exit status 1 means a criterion failed. Known product failures remain visible.
+Offline success does not establish live inference quality.
+
+evaluation/live-cases.json defines 10 live cases, including edge/adversarial
+cases, to run three times each from fresh browser state. evaluation/MANUAL.md
+explains setup, evidence and semantic scoring. Those 30 trials remain
+manual-required. No deployment secret or paid inference is used offline.
+
+Provisional formulas awaiting instructor confirmation:
+
+- pass@1 = cases passing their first trial / cases in that cohort.
+- pass^3 = cases passing all three trials / cases in that cohort.
+- A cohort with pending trials has null/unverified metrics. Pending trials
+  never count as passes. Offline and live metrics appear side by side.
+
+Other checks:
+
+    node evaluation/run.mjs
+    node evaluation/run.mjs --smoke
+    node evaluation/probe-public.mjs
+    node evaluation/scan-secrets.mjs
+
+The first two retain the Milestone II evaluation. The probe performs five
+read-only HTTP checks, writes network-results.json and never invokes inference.
+The secret scan prints counts only and writes security/secret-scan.json
+without matched values. Both document their limits.
+
+## Safety, privacy and limitations
+
+The queue allows five findings. Research has at most three HTTP attempts per
+finding, each with an eight-second timeout. Worker bodies are limited to 4 KiB,
+chat to 300 characters, model output to 512 tokens, and returned text to
+1,600/600 characters for chat/notes. Gemini has a 25-second Worker deadline
+and 40-second browser deadline. The configured IP limit is approximately
+five requests/minute per Cloudflare location, not a strict global budget.
+
+Pasted chat goes to Google without automatic sensitive-data redaction.
+Conversation, report and approval are held in page memory. Downloads persist
+as files. Provider/browser retention needs owner review. Form CSP blocks native
+submission, and forms require JavaScript. Approval gates export, not model calls.
+
+Priority is a project heuristic. The app cannot inspect installed assets or
+perform scans, patches, shell commands, emails, payments or system changes.
+Source outages, model errors, unsafe persuasion and unsupported claims remain
+possible. See security/AUDIT.md and security/LIMITATIONS.md.
+
+## Deployment
+
+.github/workflows/pages.yml publishes only dist/ on main pushes or manual
+workflow dispatch. Worker deployment is separate. Evaluation/security files
+are excluded from the Pages artifact. This preparation does not authorize
+merging, deploying or changing secrets.
