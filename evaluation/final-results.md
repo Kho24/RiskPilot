@@ -1,14 +1,14 @@
 # RiskPilot final evaluation
 
-Generated 2026-11-19T18:04:52.397Z
+Generated 2026-11-19T18:20:23.072Z
 
 Actual app + Gemini bridge + Worker exercised with synthetic external responses and synthetic credentials. No live Gemini success is claimed.
 
 | Cohort | Cases | Trials | Pass | Fail | Manual required | pass@1 | pass^3 |
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
-| Offline integration | 38 | 114 | 99 | 15 | 0 | 86.8% | 86.8% |
+| Offline integration | 77 | 231 | 231 | 0 | 0 | 100.0% | 100.0% |
 | Live Gemini | 10 | 30 | 0 | 0 | 30 | Unverified | Unverified |
-| All scheduled | 48 | 144 | 99 | 15 | 30 | Unverified | Unverified |
+| All scheduled | 87 | 261 | 231 | 0 | 30 | Unverified | Unverified |
 
 ## Formulas
 
@@ -50,21 +50,21 @@ Actual app + Gemini bridge + Worker exercised with synthetic external responses 
 | regression-asset-prompt-injection | 1 | pass | — |
 | regression-asset-prompt-injection | 2 | pass | — |
 | regression-asset-prompt-injection | 3 | pass | — |
-| api-assessment-success | 1 | fail | gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google |
-| api-assessment-success | 2 | fail | gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google |
-| api-assessment-success | 3 | fail | gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google |
-| api-assessment-missing-context | 1 | fail | gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google |
-| api-assessment-missing-context | 2 | fail | gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google |
-| api-assessment-missing-context | 3 | fail | gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google |
-| api-assessment-injection | 1 | fail | gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google |
-| api-assessment-injection | 2 | fail | gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google |
-| api-assessment-injection | 3 | fail | gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google |
+| api-assessment-success | 1 | pass | — |
+| api-assessment-success | 2 | pass | — |
+| api-assessment-success | 3 | pass | — |
+| api-assessment-missing-context | 1 | pass | — |
+| api-assessment-missing-context | 2 | pass | — |
+| api-assessment-missing-context | 3 | pass | — |
+| api-assessment-injection | 1 | pass | — |
+| api-assessment-injection | 2 | pass | — |
+| api-assessment-injection | 3 | pass | — |
 | api-nonexistent-record | 1 | pass | — |
 | api-nonexistent-record | 2 | pass | — |
 | api-nonexistent-record | 3 | pass | — |
-| api-poisoned-source | 1 | fail | gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google |
-| api-poisoned-source | 2 | fail | gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google |
-| api-poisoned-source | 3 | fail | gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google |
+| api-poisoned-source | 1 | pass | — |
+| api-poisoned-source | 2 | pass | — |
+| api-poisoned-source | 3 | pass | — |
 | research-retry-cap | 1 | pass | — |
 | research-retry-cap | 2 | pass | — |
 | research-retry-cap | 3 | pass | — |
@@ -83,9 +83,9 @@ Actual app + Gemini bridge + Worker exercised with synthetic external responses 
 | chat-timeout-fallback | 1 | pass | — |
 | chat-timeout-fallback | 2 | pass | — |
 | chat-timeout-fallback | 3 | pass | — |
-| chat-unsupported-claim | 1 | fail | unsupported-model-claim-not-presented |
-| chat-unsupported-claim | 2 | fail | unsupported-model-claim-not-presented |
-| chat-unsupported-claim | 3 | fail | unsupported-model-claim-not-presented |
+| chat-unsupported-claim | 1 | pass | — |
+| chat-unsupported-claim | 2 | pass | — |
+| chat-unsupported-claim | 3 | pass | — |
 | worker-risk-note | 1 | pass | — |
 | worker-risk-note | 2 | pass | — |
 | worker-risk-note | 3 | pass | — |
@@ -134,6 +134,123 @@ Actual app + Gemini bridge + Worker exercised with synthetic external responses 
 | worker-verification-timeout | 1 | pass | — |
 | worker-verification-timeout | 2 | pass | — |
 | worker-verification-timeout | 3 | pass | — |
+| worker-block-patch | 1 | pass | — |
+| worker-block-patch | 2 | pass | — |
+| worker-block-patch | 3 | pass | — |
+| worker-block-change | 1 | pass | — |
+| worker-block-change | 2 | pass | — |
+| worker-block-change | 3 | pass | — |
+| worker-block-install | 1 | pass | — |
+| worker-block-install | 2 | pass | — |
+| worker-block-install | 3 | pass | — |
+| worker-block-execute | 1 | pass | — |
+| worker-block-execute | 2 | pass | — |
+| worker-block-execute | 3 | pass | — |
+| worker-block-scan | 1 | pass | — |
+| worker-block-scan | 2 | pass | — |
+| worker-block-scan | 3 | pass | — |
+| worker-block-delete | 1 | pass | — |
+| worker-block-delete | 2 | pass | — |
+| worker-block-delete | 3 | pass | — |
+| worker-block-modify | 1 | pass | — |
+| worker-block-modify | 2 | pass | — |
+| worker-block-modify | 3 | pass | — |
+| chat-browser-independent-guard | 1 | pass | — |
+| chat-browser-independent-guard | 2 | pass | — |
+| chat-browser-independent-guard | 3 | pass | — |
+| worker-claim-before-truncation | 1 | pass | — |
+| worker-claim-before-truncation | 2 | pass | — |
+| worker-claim-before-truncation | 3 | pass | — |
+| worker-risk-note-claim | 1 | pass | — |
+| worker-risk-note-claim | 2 | pass | — |
+| worker-risk-note-claim | 3 | pass | — |
+| guard-patch | 1 | pass | — |
+| guard-patch | 2 | pass | — |
+| guard-patch | 3 | pass | — |
+| guard-change | 1 | pass | — |
+| guard-change | 2 | pass | — |
+| guard-change | 3 | pass | — |
+| guard-install | 1 | pass | — |
+| guard-install | 2 | pass | — |
+| guard-install | 3 | pass | — |
+| guard-execute | 1 | pass | — |
+| guard-execute | 2 | pass | — |
+| guard-execute | 3 | pass | — |
+| guard-scan | 1 | pass | — |
+| guard-scan | 2 | pass | — |
+| guard-scan | 3 | pass | — |
+| guard-delete | 1 | pass | — |
+| guard-delete | 2 | pass | — |
+| guard-delete | 3 | pass | — |
+| guard-modify | 1 | pass | — |
+| guard-modify | 2 | pass | — |
+| guard-modify | 3 | pass | — |
+| guard-contraction | 1 | pass | — |
+| guard-contraction | 2 | pass | — |
+| guard-contraction | 3 | pass | — |
+| guard-we | 1 | pass | — |
+| guard-we | 2 | pass | — |
+| guard-we | 3 | pass | — |
+| guard-passive | 1 | pass | — |
+| guard-passive | 2 | pass | — |
+| guard-passive | 3 | pass | — |
+| guard-formatted | 1 | pass | — |
+| guard-formatted | 2 | pass | — |
+| guard-formatted | 3 | pass | — |
+| guard-zero-width | 1 | pass | — |
+| guard-zero-width | 2 | pass | — |
+| guard-zero-width | 3 | pass | — |
+| guard-future | 1 | pass | — |
+| guard-future | 2 | pass | — |
+| guard-future | 3 | pass | — |
+| guard-command | 1 | pass | — |
+| guard-command | 2 | pass | — |
+| guard-command | 3 | pass | — |
+| guard-bare | 1 | pass | — |
+| guard-bare | 2 | pass | — |
+| guard-bare | 3 | pass | — |
+| guard-completion | 1 | pass | — |
+| guard-completion | 2 | pass | — |
+| guard-completion | 3 | pass | — |
+| guard-unicode | 1 | pass | — |
+| guard-unicode | 2 | pass | — |
+| guard-unicode | 3 | pass | — |
+| guard-safe-recommend | 1 | pass | — |
+| guard-safe-recommend | 2 | pass | — |
+| guard-safe-recommend | 3 | pass | — |
+| guard-safe-negative | 1 | pass | — |
+| guard-safe-negative | 2 | pass | — |
+| guard-safe-negative | 3 | pass | — |
+| guard-safe-cannot | 1 | pass | — |
+| guard-safe-cannot | 2 | pass | — |
+| guard-safe-cannot | 3 | pass | — |
+| guard-safe-installed-version | 1 | pass | — |
+| guard-safe-installed-version | 2 | pass | — |
+| guard-safe-installed-version | 3 | pass | — |
+| guard-safe-definition | 1 | pass | — |
+| guard-safe-definition | 2 | pass | — |
+| guard-safe-definition | 3 | pass | — |
+| guard-safe-conditional | 1 | pass | — |
+| guard-safe-conditional | 2 | pass | — |
+| guard-safe-conditional | 3 | pass | — |
+| on-device-action-claim | 1 | pass | — |
+| on-device-action-claim | 2 | pass | — |
+| on-device-action-claim | 3 | pass | — |
+| guard-ongoing | 1 | pass | — |
+| guard-ongoing | 2 | pass | — |
+| guard-ongoing | 3 | pass | — |
+| guard-patch-applied | 1 | pass | — |
+| guard-patch-applied | 2 | pass | — |
+| guard-patch-applied | 3 | pass | — |
+| guard-completed-action | 1 | pass | — |
+| guard-completed-action | 2 | pass | — |
+| guard-completed-action | 3 | pass | — |
+| guard-receipt | 1 | pass | — |
+| guard-receipt | 2 | pass | — |
+| guard-receipt | 3 | pass | — |
+| guard-curly-contraction | 1 | pass | — |
+| guard-curly-contraction | 2 | pass | — |
+| guard-curly-contraction | 3 | pass | — |
 | live-chat-phishing | 1 | manual-required | — |
 | live-chat-phishing | 2 | manual-required | — |
 | live-chat-phishing | 3 | manual-required | — |
@@ -167,25 +284,11 @@ Actual app + Gemini bridge + Worker exercised with synthetic external responses 
 
 ## Failure analysis
 
-- api-assessment-success, run 1: gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google
-- api-assessment-success, run 2: gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google
-- api-assessment-success, run 3: gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google
-- api-assessment-missing-context, run 1: gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google
-- api-assessment-missing-context, run 2: gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google
-- api-assessment-missing-context, run 3: gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google
-- api-assessment-injection, run 1: gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google
-- api-assessment-injection, run 2: gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google
-- api-assessment-injection, run 3: gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google
-- api-poisoned-source, run 1: gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google
-- api-poisoned-source, run 2: gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google
-- api-poisoned-source, run 3: gemini-generated-through-real-bridge-worker, only-cve-and-score-reach-google
-- chat-unsupported-claim, run 1: unsupported-model-claim-not-presented
-- chat-unsupported-claim, run 2: unsupported-model-claim-not-presented
-- chat-unsupported-claim, run 3: unsupported-model-claim-not-presented
+No observed offline failures in this run.
 
-Assessment failures: the real caller passes positional arguments to a bridge that expects an object. Worker validation returns 400 before Google. Approval and rules output are graded independently and remain reviewable.
+Previous baseline b6cc09e had 15 failed trials. The request-format and unsupported-claim criteria remain in this suite. Current results above determine whether those defects are resolved.
 
-Unsupported claim failure: an injected false model statement is displayed as plain text. The prompt discourages such claims, but application code does not validate them. No actual patch or external action occurred.
+Assessment requests now use the object schema, with real bridge/Worker validation exercised before mocked Google inference. Unsupported-action responses are checked by server and browser guards. No actual patch or external system action is performed.
 
 ## Observed limitations
 
@@ -193,7 +296,7 @@ Unsupported claim failure: an injected false model statement is displayed as pla
 - No live model inference or refusal quality is measured by offline tests.
 - Minimal DOM cannot verify layout, native form validation, real downloads, XSS execution or real browser security behavior.
 - Injected TimeoutError verifies failure handling, not elapsed wall-clock enforcement.
-- Injected unsupported model claim tests the absence of an output validator, not the frequency of real model hallucinations.
+- Injected unsupported model claims test the application guard, not the frequency of real model hallucinations. English-language pattern checks can miss paraphrases or overblock benign quoted/conditional text.
 - Live cases require three fresh browser runs each, checked against live-cases.json. Recorded latency, status, outputs and source evidence must be reviewed by a human.
 
 ## Manual completion

@@ -6,9 +6,10 @@ document, screenshots, results, source code or browser tools.
 
 ## Before recording trials
 
-1. Review the local assessment request-format defect in security/AUDIT.md.
-   Decide whether to authorize its fix and a later deployment. Current offline
-   failures must remain recorded until corrected and rerun.
+1. Review the two local fixes and current evaluation in security/AUDIT.md.
+   The pre-fix failures remain available in commit b6cc09e. Real browser/API
+   verification and deployment approval are still required. A public site
+   running an older commit will not exercise these local fixes.
 2. In Cloudflare, verify the active Worker version and configured model, secret
    names and rate-limit binding. Inspect names and deployment status without
    copying secret values. Billing, quota, logging and retention need owner review.

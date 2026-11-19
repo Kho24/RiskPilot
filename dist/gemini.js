@@ -1,3 +1,5 @@
+import {advisoryText} from './advisory.js';
+
 const worker = 'https://riskpilot-api.kho24.workers.dev';
 const siteKey = '0x4AAAAAAF-1q4f24kmm2dfr';
 
@@ -52,7 +54,7 @@ export function setupGemini(container, status, action) {
       const {note} = await response.json();
       if (typeof note !== 'string' || !note.trim()) throw new Error('Empty Gemini response');
       status.textContent = 'Gemini responded.';
-      return note.trim();
+      return advisoryText(note.trim());
     } catch (error) {
       status.textContent = 'Gemini unavailable. Using the built-in workflow.';
       throw error;

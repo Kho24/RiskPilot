@@ -1,3 +1,5 @@
+import {advisoryInstruction, advisoryText} from '../dist/advisory.js';
+
 const origin = 'https://kho24.github.io';
 const prompts = {
   'risk-note': 'Write a brief defensive risk note in plain text. Explain that CVSS describes the vulnerability and asset impact depends on exposure and applicability. Use only the provided CVE ID and score. Do not give exploit details, testing instructions, commands, or unsupported facts. Use at most two short sentences.',
@@ -84,7 +86,7 @@ export default {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY},
         body: JSON.stringify({
-          systemInstruction: {parts: [{text: prompts[action]}]},
+          systemInstruction: {parts: [{text: advisoryInstruction + ' ' + prompts[action]}]},
           contents: [{parts: [{text: JSON.stringify(modelInput)}]}],
           generationConfig: {maxOutputTokens: 512, thinkingConfig: {thinkingLevel: 'low'}}
         }),
@@ -93,8 +95,9 @@ export default {
       if (!result.ok) return reply(502, {error: 'Gemini note unavailable'});
       const data = await result.json();
       const note = data.candidates?.[0]?.content?.parts?.filter(part => !part.thought && typeof part.text === 'string')
-        .map(part => part.text).join(' ').trim().slice(0, action === 'chat' ? 1600 : 600);
-      return note ? reply(200, {note}) : reply(502, {error: 'Gemini note unavailable'});
+        .map(part => part.text).join(' ').trim();
+      return note ? reply(200, {note: advisoryText(note).slice(0, action === 'chat' ? 1600 : 600)})
+        : reply(502, {error: 'Gemini note unavailable'});
     } catch (error) {
       if (error?.name === 'TimeoutError') return reply(504, {error: 'Upstream request timed out'});
       return reply(503, {error: 'Gemini note unavailable'});

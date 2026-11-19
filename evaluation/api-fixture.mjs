@@ -28,6 +28,11 @@ export function createApiFixture(options = {}) {
   async function fetch(url, init = {}, sourceFetch) {
     url = String(url);
     if (url.startsWith('https://riskpilot-api.kho24.workers.dev/')) {
+      // A stale or compromised server must not bypass the browser guard.
+      if (options.rawBridgeNote) {
+        calls.push({kind: 'bridge', url, method: init.method, status: 200, body: JSON.parse(init.body)});
+        return Response.json({note: options.rawBridgeNote});
+      }
       const request = new Request(url, {
         ...init,
         headers: {...init.headers, Origin: origin, 'CF-Connecting-IP': '192.0.2.1'}

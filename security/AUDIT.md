@@ -2,6 +2,8 @@
 
 Audit date: 2026-11-19. Repository: Kho24/RiskPilot.
 Branch at audit start: feature/gemini-risk-note. Starting HEAD: c07e954.
+Fix follow-up starts from b6cc09e. Only the confirmed request-format and
+unsupported-action-claim defects were corrected in this follow-up.
 Scope is the current local checkout, including the previously approved local
 navigation edits. Deployed parity could not be established because all five
 read-only network probes failed DNS resolution (evaluation/network-results.json).
@@ -31,11 +33,12 @@ arbitrary browsing, infrastructure access or tool selection.
   public descriptions, affected product names, references, CVSS and state.
   enrichScore optionally reads matching NVD CVSS entries and attribution.
   Source content remains untrusted even when it comes from the expected host.
-- Intended cloud Gemini input contains only CVE ID and numeric CVSS. Retrieved
+- Cloud Gemini note input contains only CVE ID and numeric CVSS. Retrieved
   descriptions, reference URLs, product names and asset fields are excluded.
-  The current app.js call instead passes positional arguments. gemini.js
-  spreads the CVE string into numbered keys. Worker returns 400, so no cloud
-  note reaches Google from this caller in the integration tests.
+  app.js now calls geminiNote({cve, score}). gemini.js adds the token and
+  Worker accepts the existing exact schema before mapping score to cvss for
+  Google. Previously the positional string became numbered JSON keys and
+  Worker correctly returned 400. The original criteria remain in the suite.
 - Turnstile response (success, hostname, action) gates the Worker call and is
   never model input. Google text is returned to the requesting browser, not
   forwarded into another Google turn. Thought-marked parts are filtered out.
@@ -50,7 +53,10 @@ arbitrary browsing, infrastructure access or tool selection.
   Each note creates and destroys a fresh model session.
 - The Gemini cloud note is rendered beside the report. Neither the rules
   Reviewer nor the on-device Reviewer is supplied cloudNote. Human review is
-  the only current review of that cloud text before advisory export.
+  the only semantic review of that cloud text before advisory export.
+  A separate shared advisory guard filters recognized unsupported action claims
+  at the Worker and browser bridge. The same guard filters local model notes
+  before they reach later stages. It is not a general fact checker.
 
 ## 2. Real tools and permissions
 
@@ -167,7 +173,7 @@ outputs, failed criteria, timestamps and production source hashes.
 | Chat <=300 chars | Worker schema | Rejects empty trimmed text and extra fields. |
 | CVE shape and finite score 0..10 | Worker schema | Score/CVE truth is not independently verified at API boundary. |
 | Google maxOutputTokens 512, low thinking | generationConfig | Upstream generation setting; non-deterministic output and token-limit truncation possible. |
-| Returned note <=1,600 chat / 600 assessment chars | Worker extraction | Truncation may cut a sentence. No semantic claim validator. |
+| Returned note <=1,600 chat / 600 assessment chars | Worker extraction | Advisory-action check runs before truncation. Truncation can still cut ordinary advice. |
 | 8 CVE reference candidates and 8 unique products | parseCve slicing | HTTPS scheme only; no host restriction or per-string length bound. |
 | 5 requests/IP/60 seconds | Configured Cloudflare binding + code denial | Provider enforcement approximate/per-location; no strict shared daily budget. |
 | No autonomous agent-iteration loop | Architecture | No session-turn total, total DOM/history cap or global spending limit. |
@@ -208,8 +214,9 @@ The candidate is a threat model, not a demonstrated live data theft.
   Unknown-score handling and source identity checks help but do not establish
   source truth or semantic accuracy.
 - ASI09, Human-Agent Trust Exploitation: confident unsupported guidance may
-  persuade the user to approve or act. Fault injection demonstrated that a
-  false “patched” claim is displayed. The approval gate requires a click but
+  persuade the user to approve or act. Baseline fault injection exposed a
+  displayed false "patched" claim. Current tests exercise its replacement
+  with a truthful advisory statement. The approval gate requires a click but
   does not independently validate the recommendation.
 
 This is a mapping of relevant behaviors, not certification. Categories
@@ -221,7 +228,8 @@ describe risks; they do not imply this app has autonomous write tools.
 | --- | --- | --- | --- |
 | Worker-only secret bindings, credentials excluded from contents | Private data | Prompt asking for API key cannot read actual binding through model context | User-pasted secrets are still submitted; malicious page script/supply chain is a different boundary. |
 | No model tools/executor; fixed initial fetch URLs | External communication | Injected destination or returned function call has no execution path | Human can follow bad advice; redirects and third-party script network are not globally allowlisted. |
-| Cloud note schema, only ID/numeric score forwarded | Untrusted content and private data | Asset/source prose injection excluded from intended cloud note | Current caller broken; direct API score can be forged; cloud chat still accepts text. |
+| Cloud note schema, only ID/numeric score forwarded | Untrusted content and private data | Asset/source prose injection excluded from cloud note; caller schema now verified | Direct API score can be forged; cloud chat still accepts text. |
+| Shared advisory-action guard in dist/advisory.js, enforced by Worker, browser bridge and local-model adapter | Untrusted output / human-mediated external action | Recognized claims of patching, changing servers, installing software, executing commands, scanning, deleting or modifying infrastructure are replaced | English patterns can miss paraphrases or overblock benign quoted/conditional text. No general semantic proof. |
 | DOM textContent for output | External communication through active content | Model HTML image/script cannot automatically send data when rendered | Semantic lies remain readable; source reference links are clickable. |
 | Approval status and download-handler guard | External communication via advisory distribution | Premature final export blocked until explicit human decision | Local and unauthenticated; does not gate Google calls or visible chat. |
 | Size caps, deadline signals, server verification and limiter | Untrusted input / external communication | Oversized requests, repeated paid calls and invalid browser tokens | Approximate limiter, no daily budget or global cap; provider config needs live check. |
@@ -234,17 +242,16 @@ retained 10 regression cases, current API integration and failure injection.
 Live cases are explicitly manual-required. No live API response, refusal or
 browser safety claim is derived from mocked responses. See LIMITATIONS.md.
 
-Recommendation: **DO NOT SHIP YET** for this final candidate. The normal
-assessment Gemini path reproducibly fails before inference, false model
-action claims pass through to chat, and real deployment/model behavior is
-unverified here. The read-only permissions and approval/export guard reduce
-impact and support keeping the existing public installation available while
-the owner reviews these findings. No production change is implied.
+Recommendation: **SHIP WITH GATES** for this final candidate. The request
+schema is fixed and the original failing action claim is filtered. The expanded
+offline suite retains the old criteria and tests all seven prohibited action
+types, wording variations, safe advice and independent server/browser/local
+guard boundaries. No current live model-quality result is available.
 
-Minimum release gates: authorize and correct the serialization defect, rerun
-the suite without weakening checks, decide how to address unsupported
-action claims, complete the 30 live trials and browser approval tests, review
-active Cloudflare config/cost/retention, then obtain deployment approval.
+Release gates: complete the 30 live trials and browser approval tests, review
+the guard's false-positive and paraphrase limitations, verify active Cloudflare
+config/cost/retention and obtain owner deployment approval. The existing public
+installation has not been altered by these local fixes.
 
 ## Sources
 

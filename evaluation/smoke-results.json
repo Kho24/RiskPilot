@@ -63,6 +63,8 @@
           "Confirm whether the asset is affected and whether local controls change exploitability.",
           "Verify the published source before using this assessment for a real change."
         ],
+        "geminiNote": null,
+        "geminiStatus": "",
         "stages": [
           "Complete",
           "Complete",
@@ -148,6 +150,8 @@
         "reviewer": [
           "Confirm whether the asset is affected and whether local controls change exploitability."
         ],
+        "geminiNote": null,
+        "geminiStatus": "",
         "stages": [
           "Complete",
           "Complete",
@@ -230,6 +234,8 @@
           "Confirm whether the asset is affected and whether local controls change exploitability.",
           "Verify the published source before using this assessment for a real change."
         ],
+        "geminiNote": null,
+        "geminiStatus": "",
         "stages": [
           "Complete",
           "Complete",
@@ -308,6 +314,8 @@
           "Confirm whether the asset is affected and whether local controls change exploitability.",
           "Verify the published source before using this assessment for a real change."
         ],
+        "geminiNote": null,
+        "geminiStatus": "",
         "stages": [
           "Complete",
           "Complete",

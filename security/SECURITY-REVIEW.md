@@ -1,17 +1,17 @@
 # RiskPilot — final security review draft
 
 **Owner:** [YOUR FULL NAME], student/project owner. **Review:** 2026-11-19.
-**Recommendation: DO NOT SHIP YET** for the final candidate.
+**Recommendation: SHIP WITH GATES** for the final candidate.
 
 RiskPilot provides educational chat and vulnerability advisories. It researches
 public CVEs and proposes remediation, with human approval required before
-export. Gemini handles chat and an intended short Risk Analyst note. It has
+export. Gemini handles chat and a short Risk Analyst note. It has
 no model-callable patching, scanning, email, shell or private-system tools.
 
 **Untrusted inputs.** Anonymous chat, CVE IDs, asset names, environment,
 criticality, sensitivity, exposure and software versions can be inaccurate or
 malicious. Public CVE descriptions, scores and reference links also require
-caution. Cloud chat receives the current message. The intended cloud note
+caution. Cloud chat receives the current message. The cloud note
 receives only ID/score. Optional on-device notes receive fuller context,
 retrieved evidence and earlier local-stage notes.
 
@@ -36,26 +36,28 @@ model tool execution restrict attacker-directed transmission (external
 communication). Minimal cloud-note fields reduce exposure to asset/source
 prose (untrusted content). Text rendering prevents returned HTML from
 initiating image/script requests. Export checks require explicit report
-approval. Server verification, request/output caps and an approximate IP
-rate limit constrain API abuse. These controls do not validate advice or
-provide a strict daily spending budget.
+approval. An advisory-only instruction and shared output guard replace
+recognized unsupported-action claims at the Worker, browser bridge and
+optional local-model boundary. Server verification, size/time caps and an
+approximate IP limit constrain API abuse. General advice accuracy and a
+strict daily spending budget remain outside these controls.
 
-**Evaluation evidence.** The final suite runs 38 offline cases three times
-using actual application/Worker code with synthetic provider responses.
-Four assessment cases expose a request-format defect before Google is
-called. Fault injection also shows a false model claim of patching a server
-is displayed without validation. This does not demonstrate that live Gemini
-made that claim. Approval/export checks and restricted transport are tested
-independently. Ten live cases, three trials each, remain unverified. Public
-HTTP probes failed DNS resolution here, so deployment parity is unconfirmed.
+**Evaluation evidence.** The expanded final suite runs 77 offline cases three
+times using actual application/Worker code and synthetic provider responses.
+The original assessment-request and false-action-claim criteria are retained.
+New cases cover seven prohibited action types, wording variations, safe advice
+and independent guard boundaries. Baseline commit b6cc09e preserves the earlier
+15 failures. Exact current outcomes are in the evaluation report. Ten live
+cases, three trials each, remain unverified. Prior public HTTP probes failed
+DNS resolution here, so deployment parity is unconfirmed.
 
-**Release gates and limitations.** Correct the assessment integration, resolve
-or explicitly accept the unsupported-claim risk, rerun tests and complete
-live model/browser verification before approving a release. Confirm active
-Cloudflare bindings, logging, retention and billing with the owner. The gate
-is local and unauthenticated. Pasted chat is sent to Google without automatic
-redaction. Provider retention and real model resistance are unverified.
-The existing public installation was preserved during this review.
+**Release gates and limitations.** Complete live model/browser verification
+and owner deployment approval. Confirm active Cloudflare bindings, logging,
+retention and billing. The English-language guard can miss paraphrases or
+replace benign quoted/conditional wording. It cannot validate every fact.
+Approval is local and unauthenticated. Pasted chat goes to Google without
+automatic redaction. Provider retention and real model resistance remain
+unverified. These fixes are local and the public installation was preserved.
 
 Evidence: [audit](AUDIT.md), [evaluation](../evaluation/final-results.md),
 [limitations](LIMITATIONS.md). Category source:

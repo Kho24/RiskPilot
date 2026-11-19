@@ -9,10 +9,10 @@ missing context. A human must approve the report before final advisory export.
 
 ## Current review status
 
-Final candidate recommendation: **DO NOT SHIP YET**. The checkout has an
-assessment-to-Gemini request-format defect and no application validation of
-unsupported model action claims. Current evaluation records these failures.
-Live model trials and dashboard/browser verification remain outstanding.
+Final candidate recommendation: **SHIP WITH GATES**. The assessment request
+schema is corrected and model output passes an advisory-action guard.
+Offline tests cover both fixes. Live model trials and dashboard/browser
+verification are release gates, followed by owner deployment approval.
 See security/AUDIT.md and security/SECURITY-REVIEW.md.
 
 ## Prerequisites and clean setup
@@ -62,15 +62,22 @@ to the existing public origin. Optional on-device AI depends on browser support.
 GitHub Pages serves dist/. Typed chat goes through the fixed Cloudflare Worker
 after Turnstile verification. The Worker checks origin, schema, size,
 verification hostname/action and its IP limiter before Google generateContent.
-Only the current message is sent for chat. Intended assessment input is only
-CVE ID and numeric score for one live published finding. The current caller
-defect prevents that path from reaching Google in integration tests.
+Only the current message is sent for chat. The assessment sends an object
+containing CVE ID and numeric score for one live published finding. The bridge
+adds verification and the Worker validates the schema before calling Google.
 Demo reports skip cloud notes.
 
 Risk scoring, Remediation and Reviewer use the built-in engine. Optional
 on-device AI produces local notes using asset/evidence/prior local-stage data.
 The cloud Gemini note is not reviewed by these rules. The model has no
 callable network, shell, patching or infrastructure tools.
+
+The Worker strengthens advisory-only model instructions and checks generated
+text before returning it. The browser bridge checks again, including responses
+from an older Worker. Optional local model notes use the same guard. Recognized
+claims of unsupported actions are replaced with a truthful advisory statement.
+This conservative English-language check is not a general factual verifier:
+paraphrases may escape it and benign quoted/conditional text may be replaced.
 
 Required Worker secret/configuration names:
 
@@ -92,7 +99,7 @@ current public deployment. This review does not deploy or change that setup.
 
     node evaluation/run-final.mjs
 
-The runner executes the retained 10 Milestone II cases plus 28 API/security
+The runner executes the retained 10 Milestone II cases plus 67 API/security
 cases, three times each with fresh page, widget and fixture state. It runs
 actual app handlers, Gemini bridge and Worker code against synthetic
 Google/source/Turnstile responses and dummy credentials. Results are:
@@ -100,8 +107,10 @@ Google/source/Turnstile responses and dummy credentials. Results are:
 - evaluation/final-results.json — outputs, criteria, failures and source hashes.
 - evaluation/final-results.md — metrics, trial table and failure analysis.
 
-Exit status 1 means a criterion failed. Known product failures remain visible.
-Offline success does not establish live inference quality.
+Exit status 1 means a criterion failed. The earlier 15 failures are preserved
+in commit b6cc09e. Current criteria retain those checks and add action-claim
+and safe-advice regressions. Offline success does not establish live inference
+quality.
 
 evaluation/live-cases.json defines 10 live cases, including edge/adversarial
 cases, to run three times each from fresh browser state. evaluation/MANUAL.md

@@ -4,12 +4,15 @@ import {exercise} from './workbench.mjs';
 import {grade} from './criteria.mjs';
 import {createApiFixture, exerciseWorker, fixtureKey, fixtureSecret, fixtureNote} from './api-fixture.mjs';
 import {exerciseChat} from './chat-workbench.mjs';
+import {advisoryText} from '../dist/advisory.js';
+import {agentNote} from '../dist/engine.js';
 
 if (process.argv.length !== 2) throw new Error('Usage: node evaluation/run-final.mjs');
 const load = async name => JSON.parse(await readFile(new URL(name, import.meta.url), 'utf8'));
 const legacy = await load('cases.json');
 const apiCases = await load('final-cases.json');
 const liveCases = await load('live-cases.json');
+const guardCases = await load('advisory-cases.json');
 const attempts = 3;
 const runs = [];
 
@@ -26,11 +29,49 @@ function transportChecks(calls, maxGenerationCalls = 1) {
     ['credentials-excluded-from-model-prompt', google.every(call =>
       !JSON.stringify(call.body).includes(fixtureKey) && !JSON.stringify(call.body).includes(fixtureSecret)
       && !JSON.stringify(call.body).includes('EVALUATION_ONLY_TOKEN'))],
+    ['advisory-system-instruction', google.every(call =>
+      call.body.systemInstruction.parts[0].text.includes('RiskPilot is advisory only.'))],
     ['timeouts-attached', calls.filter(call => ['google', 'verification'].includes(call.kind)).every(call => call.hasTimeout)]
   ];
 }
 
 async function evaluate(testCase) {
+  if (testCase.surface === 'advisory' || testCase.surface === 'local-note') {
+    let output = {note: advisoryText(testCase.text)};
+    if (testCase.surface === 'local-note') {
+      const previousModel = globalThis.LanguageModel;
+      let destroyed = false;
+      let promptHasTimeout = false;
+      let advisoryInstructionPresent = false;
+      try {
+        globalThis.LanguageModel = {create: async options => {
+          advisoryInstructionPresent = options.initialPrompts[0].content.includes('RiskPilot is advisory only.');
+          return {
+            prompt: async (input, settings) => {
+              promptHasTimeout = settings.signal instanceof AbortSignal;
+              return testCase.text;
+            },
+            destroy() { destroyed = true; }
+          };
+        }};
+        output = {note: await agentNote('Reviewer', 'Review this synthetic finding.', {}), destroyed,
+          promptHasTimeout, advisoryInstructionPresent};
+      } finally {
+        globalThis.LanguageModel = previousModel;
+      }
+    }
+    const checks = testCase.expect.unchanged
+      ? [['safe-advice-preserved', output.note === testCase.text]]
+      : [
+        ['unsupported-claim-removed', !output.note.includes(testCase.text)],
+        ['truthful-advisory-replacement', output.note.startsWith('RiskPilot provides advisory guidance only.')
+          && output.note.includes('cannot patch systems') && output.note.includes('modify infrastructure')],
+        ['guard-idempotent', advisoryText(output.note) === output.note]
+      ];
+    if (testCase.surface === 'local-note') checks.push(['local-model-lifecycle-preserved',
+      output.destroyed && output.promptHasTimeout && output.advisoryInstructionPresent]);
+    return {output, checks};
+  }
   if (testCase.surface === 'legacy') {
     const output = await exercise(testCase);
     return {output, checks: grade(testCase, output)};
@@ -61,6 +102,9 @@ async function evaluate(testCase) {
       checks.push(['risk-note-output-cap', output.result.note.length <= 600]);
     }
     if (testCase.expect.outputLength) checks.push(['output-character-cap', output.result.note?.length === testCase.expect.outputLength]);
+    if (testCase.expect.advisoryReplacement) checks.push(['server-action-claim-blocked',
+      output.result.note?.startsWith('RiskPilot provides advisory guidance only.')
+      && !output.result.note.includes(testCase.options.note)]);
     return {output, checks};
   }
   if (testCase.surface === 'chat') {
@@ -94,6 +138,10 @@ async function evaluate(testCase) {
       checks.push(['unsupported-model-claim-not-presented', output.turns.every(turn =>
         !turn.text.includes('I patched your production server'))]);
     }
+    if (testCase.expect.advisoryReplacement) checks.push(['browser-action-claim-blocked',
+      output.turns.some(turn => turn.speaker.includes('Gemini') && turn.text.startsWith('RiskPilot provides advisory guidance only.'))
+      && output.turns.filter(turn => turn.speaker !== 'You').every(turn =>
+        !turn.text.includes(testCase.options.rawBridgeNote ?? testCase.options.note))]);
     return {output, checks};
   }
   const base = structuredClone(legacy.find(item => item.id === testCase.base));
@@ -112,6 +160,10 @@ async function evaluate(testCase) {
     ...transportChecks(api.calls, expectedGenerationCalls)
   ];
   if (testCase.expect.gemini) {
+    const bridgeCalls = api.calls.filter(call => call.kind === 'bridge');
+    checks.push(['risk-note-request-schema', bridgeCalls.length === expectedGenerationCalls && bridgeCalls.every(call =>
+      call.status === 200 && Object.keys(call.body).sort().join(',') === 'cve,score,token'
+      && call.body.cve === base.input.cve && call.body.score === 7.5)]);
     checks.push(['gemini-generated-through-real-bridge-worker', google.length === expectedGenerationCalls
       && output.geminiNote === fixtureNote && output.geminiStatus === 'Gemini responded.']);
     checks.push(['only-cve-and-score-reach-google', google.length === expectedGenerationCalls && google.every(call => {
@@ -143,7 +195,7 @@ async function evaluate(testCase) {
   return {output, checks};
 }
 
-const cases = [...legacy.map(item => ({...item, id: 'regression-' + item.id, surface: 'legacy'})), ...apiCases];
+const cases = [...legacy.map(item => ({...item, id: 'regression-' + item.id, surface: 'legacy'})), ...apiCases, ...guardCases];
 for (const testCase of cases) {
   for (let run = 1; run <= attempts; run++) {
     let output = null;
@@ -190,7 +242,7 @@ const summarize = selected => {
     'pass^3': pending ? null : ids.filter(id => selected.filter(run => run.caseId === id && run.pass).length === 3).length / ids.length
   };
 };
-const sourceFiles = ['dist/app.js', 'dist/chat.js', 'dist/gemini.js', 'dist/engine.js', 'worker/index.mjs', 'worker/wrangler.toml'];
+const sourceFiles = ['dist/app.js', 'dist/chat.js', 'dist/gemini.js', 'dist/engine.js', 'dist/advisory.js', 'worker/index.mjs', 'worker/wrangler.toml'];
 const sourceHashes = Object.fromEntries(await Promise.all(sourceFiles.map(async name => [
   name, createHash('sha256').update(await readFile(new URL('../' + name, import.meta.url))).digest('hex')
 ])));
@@ -210,7 +262,7 @@ const result = {
     'No live model inference or refusal quality is measured by offline tests.',
     'Minimal DOM cannot verify layout, native form validation, real downloads, XSS execution or real browser security behavior.',
     'Injected TimeoutError verifies failure handling, not elapsed wall-clock enforcement.',
-    'Injected unsupported model claim tests the absence of an output validator, not the frequency of real model hallucinations.',
+    'Injected unsupported model claims test the application guard, not the frequency of real model hallucinations. English-language pattern checks can miss paraphrases or overblock benign quoted/conditional text.',
     'Live cases require three fresh browser runs each, checked against live-cases.json. Recorded latency, status, outputs and source evidence must be reviewed by a human.'
   ],
   failures: failures.map(({caseId, run, failureReason}) => ({caseId, run, failureReason})), runs
@@ -230,9 +282,9 @@ const markdown = [
   '| --- | ---: | --- | --- |',
   ...runs.map(run => '| ' + [run.caseId, run.run, run.status, run.criteriaFailed.join(', ') || '—'].join(' | ') + ' |'),
   '', '## Failure analysis', '',
-  ...failures.map(run => '- ' + run.caseId + ', run ' + run.run + ': ' + run.failureReason),
-  '', 'Assessment failures: the real caller passes positional arguments to a bridge that expects an object. Worker validation returns 400 before Google. Approval and rules output are graded independently and remain reviewable.',
-  '', 'Unsupported claim failure: an injected false model statement is displayed as plain text. The prompt discourages such claims, but application code does not validate them. No actual patch or external action occurred.',
+  ...(failures.length ? failures.map(run => '- ' + run.caseId + ', run ' + run.run + ': ' + run.failureReason) : ['No observed offline failures in this run.']),
+  '', 'Previous baseline b6cc09e had 15 failed trials. The request-format and unsupported-claim criteria remain in this suite. Current results above determine whether those defects are resolved.',
+  '', 'Assessment requests now use the object schema, with real bridge/Worker validation exercised before mocked Google inference. Unsupported-action responses are checked by server and browser guards. No actual patch or external system action is performed.',
   '', '## Observed limitations', '', ...result.limitations.map(item => '- ' + item),
   '', '## Manual completion', '',
   'Use evaluation/live-cases.json and evaluation/MANUAL.md. Preserve these offline results. Save real observations separately. Do not label fallback responses as successful Gemini trials.',

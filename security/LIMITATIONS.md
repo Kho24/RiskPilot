@@ -16,16 +16,17 @@ rules-backed Remediation and Reviewer stages. The optional on-device path
 adds local notes and depends on browser/platform support. Risk ranking is a
 documented project heuristic; a correct score does not establish local impact.
 
-## Observed evaluation failures
+## Evaluation history and current verification limits
 
-- Four API assessment cases fail in each of three trials. app.js passes
-  positional CVE/score arguments to the object-based Gemini bridge. Worker
-  returns 400 and no Google inference occurs. The assessment still produces
-  the rules report, so fallback must not be counted as Gemini success.
-- The unsupported-claim case fails in all three injected trials: chat
-  displays a supplied false statement that it patched a server. This proves
-  the absence of an application claim validator, not that real Gemini
-  produced that statement or took an external action.
+- Baseline b6cc09e recorded 15 failed offline trials. The positional-argument
+  bug is now corrected to the existing object schema. The four affected
+  assessment cases retain their original criteria.
+- The former displayed false "patched" claim is now replaced by an advisory
+  statement. Tests inject all seven prohibited action types through the Worker
+  and test the independent browser and optional local-model guards. These
+  synthetic responses do not measure real Gemini hallucination frequency.
+- Current outcomes and exact metrics are in evaluation/final-results.md.
+  Offline results cannot establish deployed behavior or live model quality.
 - Five public HTTP probes failed ENOTFOUND in this environment. This does
   not establish a public outage. Ten live case definitions, three trials
   each, remain manual-required. No current live model-quality score exists.
@@ -44,8 +45,11 @@ Turnstile is a third-party script with page access.
 The IP limiter is approximate/per-location. There is no strict global
 spending budget, shared daily call cap, account authentication or durable
 approval trail. The API accepts a syntactically valid CVE and caller score
-without server-side fact lookup. Output is truncated rather than
-semantically validated. Source response size, retained chat DOM and session
+without server-side fact lookup. A conservative English-language pattern guard
+checks model text before truncation. It can miss unfamiliar paraphrases or
+non-English claims, and may replace benign quotations or conditional wording.
+It does not validate all facts or establish actual asset applicability.
+Source response size, retained chat DOM and session
 turn count are unbounded. Local model creation can hang without a deadline.
 
 Client-side approval gates export but cannot enforce organizational review
@@ -56,8 +60,8 @@ bindings are unverified.
 
 ## With another month
 
-1. Correct and verify the assessment integration. Add narrowly scoped
-   regression checks at the real entry points and browser smoke checks.
+1. Verify the corrected assessment integration with the live API and real
+   browser. Maintain the new entry-point and action-claim regressions.
 2. Evaluate genuine model responses over repeated normal/adversarial trials.
    Add evidence-bound claim checking and clearly separate unverified model
    commentary from verified source data. Include cloud notes in meaningful
