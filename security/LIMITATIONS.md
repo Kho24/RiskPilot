@@ -33,6 +33,12 @@ documented project heuristic; a correct score does not establish local impact.
 - Older user-reported 503/504 behavior is troubleshooting history, not a new
   measured failure of the currently configured paid-key deployment.
 
+The prepared live runner automates collection and mechanical grading, not
+semantic certainty. Deployed frontend parity is hash-checked; Worker source
+identity requires owner attestation. Turnstile may block automated browsers,
+and each call needs fresh verification. No challenge bypass is provided.
+The local runner has not yet captured a real live trial in this environment.
+
 ## Remaining security weaknesses
 
 Untrusted text can manipulate generated advice. System prompts are guidance

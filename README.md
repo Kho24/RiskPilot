@@ -117,6 +117,35 @@ cases, to run three times each from fresh browser state. evaluation/MANUAL.md
 explains setup, evidence and semantic scoring. Those 30 trials remain
 manual-required. No deployment secret or paid inference is used offline.
 
+## Run the live Gemini evaluation
+
+The semi-automated runner uses the real public frontend, Cloudflare Worker and
+fresh Turnstile verification. Optional browser tooling is separate from the
+application:
+
+    node evaluation/run-live.mjs --check
+    npm --prefix evaluation/browser install --ignore-scripts --package-lock=false
+    node evaluation/run-live.mjs --run --worker-version YOUR_VERIFIED_VERSION_UUID
+    node evaluation/run-live.mjs --review
+
+On Windows PowerShell use npm.cmd. Verify the active Worker source/config in
+Cloudflare before supplying its non-secret version UUID. Keep Chrome visible
+and solve genuine challenges. The runner fills cases, captures outputs/status
+and tests approval/export automatically. Read remaining semantic criteria
+using the grouped review prompt. It never counts fallback or unrun trials as
+successful live Gemini tests.
+
+The public frontend must match the committed source. Current local commits
+must first become available through the owner's approved release process;
+the runner does not publish them. A check failure stops execution without
+inference requests. Preparing the plan and unit checks needs no Playwright:
+
+    node evaluation/run-live.mjs --prepare
+    node --test evaluation/live-support.test.mjs
+
+See evaluation/LIVE.md and the reduced evaluation/MANUAL.md. Live results are
+saved separately in evaluation/live-results.json and live-results.md.
+
 Provisional formulas awaiting instructor confirmation:
 
 - pass@1 = cases passing their first trial / cases in that cohort.

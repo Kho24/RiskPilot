@@ -1,0 +1,133 @@
+{
+  "generatedAt": "2026-11-19T18:47:01.160Z",
+  "branch": "feature/gemini-risk-note",
+  "inspectionHead": "f7168f922531646ba1d0dd2ef107db972d0a735a",
+  "trackedFeatureBaseline": "c07e954de49cf43f8ed058f0e6c112d3cdcfaa74",
+  "localTrackingRefs": {
+    "main": "345889ce399b5a63a41c9008f96caa108d1d0793",
+    "originMain": "345889ce399b5a63a41c9008f96caa108d1d0793",
+    "originFeature": "c07e954de49cf43f8ed058f0e6c112d3cdcfaa74"
+  },
+  "candidateCommits": [
+    "f7168f9 Fix Gemini assessment payload and guard unsupported action claims",
+    "b6cc09e Audit RiskPilot security and add final API evaluation"
+  ],
+  "committedDifference": [
+    "M\tREADME.md",
+    "A\tdist/advisory.js",
+    "M\tdist/app.js",
+    "M\tdist/engine.js",
+    "M\tdist/gemini.js",
+    "A\tevaluation/MANUAL.md",
+    "A\tevaluation/advisory-cases.json",
+    "A\tevaluation/api-fixture.mjs",
+    "A\tevaluation/chat-workbench.mjs",
+    "A\tevaluation/clean-check.json",
+    "A\tevaluation/criteria.mjs",
+    "A\tevaluation/final-cases.json",
+    "A\tevaluation/final-results.json",
+    "A\tevaluation/final-results.md",
+    "A\tevaluation/live-cases.json",
+    "A\tevaluation/network-results.json",
+    "A\tevaluation/probe-public.mjs",
+    "M\tevaluation/results.json",
+    "A\tevaluation/run-final.mjs",
+    "M\tevaluation/run.mjs",
+    "A\tevaluation/scan-secrets.mjs",
+    "M\tevaluation/smoke-results.json",
+    "M\tevaluation/workbench.mjs",
+    "A\tsecurity/AUDIT.md",
+    "A\tsecurity/LIMITATIONS.md",
+    "A\tsecurity/SECURITY-REVIEW.md",
+    "A\tsecurity/secret-scan.json",
+    "M\tworker/index.mjs"
+  ],
+  "status": "Preflight blocked; no live trials executed",
+  "recommendation": "SHIP WITH GATES",
+  "requirements": [
+    {
+      "requirement": "Complete system runs from clean clone using README",
+      "complete": "Partial",
+      "evidence": "README.md; evaluation/clean-check.json; evaluation/LIVE.md",
+      "remainingAction": "Offline clean-folder reruns passed. Publish the approved candidate later, install optional browser tooling, and verify the full real-API path."
+    },
+    {
+      "requirement": "At least two tools",
+      "complete": "Yes, implemented",
+      "evidence": "dist/engine.js research and enrichScore; worker/index.mjs",
+      "remainingAction": "CVE Program lookup and NVD enrichment exist; retain live tool evidence when enrichment is used. Model tool selection is not implemented or claimed."
+    },
+    {
+      "requirement": "Final evaluation harness updated to current system",
+      "complete": "Implemented; live execution pending",
+      "evidence": "evaluation/run-final.mjs; run-live.mjs; live-cases.json",
+      "remainingAction": "Run and review 30 real trials after the version gate passes."
+    },
+    {
+      "requirement": "One-page manager security review",
+      "complete": "Draft complete",
+      "evidence": "security/SECURITY-REVIEW.md",
+      "remainingAction": "Fill owner name and confirm final one-page submission layout."
+    },
+    {
+      "requirement": "Every untrusted model input named",
+      "complete": "Yes",
+      "evidence": "security/AUDIT.md section 1",
+      "remainingAction": "Confirm deployed source parity."
+    },
+    {
+      "requirement": "Lethal-trifecta analysis",
+      "complete": "Yes",
+      "evidence": "security/AUDIT.md section 6",
+      "remainingAction": "No content change needed."
+    },
+    {
+      "requirement": "One specific exfiltration path",
+      "complete": "Yes",
+      "evidence": "security/AUDIT.md section 6",
+      "remainingAction": "Threat scenario is distinguished from a demonstrated live exploit."
+    },
+    {
+      "requirement": "Removed/gated trifecta leg",
+      "complete": "Yes",
+      "evidence": "security/AUDIT.md sections 6 and 8",
+      "remainingAction": "Private secret access and model-directed communication are restricted; human-mediated disclosure remains possible."
+    },
+    {
+      "requirement": "Two or three OWASP Agentic categories",
+      "complete": "Yes",
+      "evidence": "security/AUDIT.md section 7; SECURITY-REVIEW.md",
+      "remainingAction": "ASI01, ASI08, ASI09 mapped to actual behavior."
+    },
+    {
+      "requirement": "At least three layered guardrails tied to trifecta legs",
+      "complete": "Yes",
+      "evidence": "security/AUDIT.md section 8; dist/advisory.js; worker/index.mjs",
+      "remainingAction": "Verify deployment of the documented controls."
+    },
+    {
+      "requirement": "Deploy recommendation justified by evidence",
+      "complete": "Yes, conditional",
+      "evidence": "security/SECURITY-REVIEW.md; evaluation/final-results.md; live-results.md",
+      "remainingAction": "SHIP WITH GATES; live verification and owner approval are outstanding."
+    },
+    {
+      "requirement": "Honest limitations",
+      "complete": "Yes",
+      "evidence": "security/LIMITATIONS.md; evaluation/LIVE.md",
+      "remainingAction": "Retain pending live inference, Worker attestation and guard limitations."
+    },
+    {
+      "requirement": "Observed evaluation failures documented",
+      "complete": "Yes",
+      "evidence": "Baseline b6cc09e; security/LIMITATIONS.md; evaluation/final-results.md",
+      "remainingAction": "Current offline failures are zero. Live preflight DNS failures and unrun slots are explicitly recorded."
+    },
+    {
+      "requirement": "What would change with another month",
+      "complete": "Yes",
+      "evidence": "security/LIMITATIONS.md final section",
+      "remainingAction": "Proposals remain distinguished from implemented controls."
+    }
+  ]
+}
