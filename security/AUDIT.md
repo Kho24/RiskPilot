@@ -144,7 +144,7 @@ to the whole generated report. No decision patches, scans, emails or changes
 an external system. Gate is client-side and has no identity check, signature,
 durable approval log or organizational separation of duties. Model output
 is already visible and already processed externally before this gate.
-Accountable owner: [YOUR FULL NAME] (student/project owner).
+Accountable owner: kho24 (student/project owner).
 
 ## 5. Logging and enforced caps
 

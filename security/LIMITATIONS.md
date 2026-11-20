@@ -1,7 +1,9 @@
-# Final limitations draft
+# Final limitations
 
-This draft describes the audited checkout. Deployed parity, model behavior,
-provider settings and ownership acceptance require manual confirmation.
+This draft describes the audited checkout. The recorded frontend preflight
+matched its candidate; Worker identity is owner-attested. Final ordinary-browser
+checks are owner-reported PASS. Provider settings, broad model performance and
+ownership acceptance remain outside those limited functional observations.
 
 ## Functional scope
 
@@ -25,19 +27,45 @@ documented project heuristic; a correct score does not establish local impact.
   statement. Tests inject all seven prohibited action types through the Worker
   and test the independent browser and optional local-model guards. These
   synthetic responses do not measure real Gemini hallucination frequency.
-- Current outcomes and exact metrics are in evaluation/final-results.md.
-  Offline results cannot establish deployed behavior or live model quality.
-- Five public HTTP probes failed ENOTFOUND in this environment. This does
-  not establish a public outage. Ten live case definitions, three trials
-  each, remain manual-required. No current live model-quality score exists.
+- Automated final-system evaluation passed 231/231 offline trials: 77 cases x 3,
+  pass@1 = 100% and pass^3 = 100%. Current schema, security guardrails,
+  regressions, adversarial cases and output validation are covered. Actual
+  code runs against synthetic provider responses; this is not live model quality.
+- Three production Playwright attempts of live-chat-phishing failed during
+  browser verification, with no Worker/Gemini response. Trial 3 directly captured
+  zero Worker POSTs and no token before the frontend's 12-second deadline.
+  Trials 1 and 2 have consistent fallback/timing but less diagnostic coverage.
+  No Worker or Gemini defect was demonstrated; all three remain failures and
+  the other 27 production slots remain unrun.
+- Turnstile is a production security gate preventing the instrumented browser
+  from reaching the API. Cloudflare documents that automated browsers can be
+  detected and blocked; production Turnstile automation is not a supported
+  verification path here. The challenge-resource HTTP 401 alone does not prove
+  the exact provider cause. Ordinary-browser live verification is separately
+  owner-reported PASS; this does not regrade the production automation failures.
+- Earlier ENOTFOUND probes describe this environment's network limitation,
+  not a public outage. No current live model-quality score exists.
 - Older user-reported 503/504 behavior is troubleshooting history, not a new
   measured failure of the currently configured paid-key deployment.
 
-The prepared live runner automates collection and mechanical grading, not
-semantic certainty. Deployed frontend parity is hash-checked; Worker source
-identity requires owner attestation. Turnstile may block automated browsers,
-and each call needs fresh verification. No challenge bypass is provided.
-The local runner has not yet captured a real live trial in this environment.
+The production attempts are preserved in evaluation/live-results.json and
+live-results.md. The separate final-results.json live entries are the offline
+generator's plan placeholders, not observed production outcomes. Do not resume
+production automation or use test keys, token replay, stealth settings or
+changed security controls to obtain a pass. The actual production control stays
+intact. Cloudflare reference:
+https://developers.cloudflare.com/turnstile/troubleshooting/testing/
+
+The owner reports Gemini chat, real CVE assessment with all three stages,
+adversarial advisory-only output, and all six approval/export checks passed.
+The source is evaluation/manual-results.json and evaluation/MANUAL.md, not an
+independent API trace. Exact timestamps and transcripts were not supplied.
+The short checklist verifies release behavior, not 30 genuine-model
+trials. Confirm rubric interpretation; if required, execute the existing 10 live
+cases three times manually with unchanged criteria. None of the saved failures
+may be converted into passes. Recommendation remains **SHIP WITH GATES**,
+with the manual functional gate owner-reported complete; operational settings
+and owner release acceptance/approval remain responsibilities.
 
 ## Remaining security weaknesses
 
@@ -66,8 +94,8 @@ bindings are unverified.
 
 ## With another month
 
-1. Verify the corrected assessment integration with the live API and real
-   browser. Maintain the new entry-point and action-claim regressions.
+1. Expand the owner-reported browser checks into repeated, captured live-model
+   verification while preserving Turnstile. Maintain entry-point and action-claim regressions.
 2. Evaluate genuine model responses over repeated normal/adversarial trials.
    Add evidence-bound claim checking and clearly separate unverified model
    commentary from verified source data. Include cloud notes in meaningful

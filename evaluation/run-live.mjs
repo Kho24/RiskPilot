@@ -3,7 +3,7 @@ import {fileURLToPath} from 'node:url';
 import {createRequire} from 'node:module';
 import {createInterface} from 'node:readline/promises';
 import {stdin, stdout} from 'node:process';
-import {candidate, preflight, newSession, saveSession, hash, applyObservation, reviewTrial, redact, publicSite} from './live-support.mjs';
+import {candidate, preflight, newSession, saveSession, hash, applyObservation, reviewTrial, redact, publicSite, pendingTrials} from './live-support.mjs';
 import {observeTrial} from './live-browser.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -13,11 +13,11 @@ const mode = process.argv[2];
 const args = process.argv.slice(3);
 const options = {};
 for (let index = 0; index < args.length; index += 2) {
-  if (!['--worker-version', '--browser'].includes(args[index]) || !args[index + 1]) throw new Error('Unknown or incomplete option');
+  if (!['--worker-version', '--browser', '--limit'].includes(args[index]) || !args[index + 1]) throw new Error('Unknown or incomplete option');
   options[args[index].slice(2)] = args[index + 1];
 }
 if (!['--prepare', '--check', '--run', '--review'].includes(mode)) {
-  console.log('Usage: node evaluation/run-live.mjs --prepare | --check | --run --worker-version VERIFIED_ID [--browser chrome|msedge] | --review');
+  console.log('Usage: node evaluation/run-live.mjs --prepare | --check | --run --worker-version VERIFIED_ID [--browser chrome|msedge] [--limit 1] | --review');
   process.exitCode = 2;
 } else {
   await main().catch(error => {
@@ -27,6 +27,8 @@ if (!['--prepare', '--check', '--run', '--review'].includes(mode)) {
 }
 
 async function main() {
+  const trialLimit = options.limit === undefined ? 30 : Number(options.limit);
+  pendingTrials([], trialLimit); // Reject invalid limits before network or paid calls.
   const snapshot = await candidate(root);
   let session;
   try { session = JSON.parse(await readFile(new URL('live-results.json', directory), 'utf8')); }
@@ -100,7 +102,7 @@ async function main() {
     console.log('The next step makes real API requests using only the saved synthetic cases.');
     console.log('Keep the browser visible. Complete any Turnstile challenge yourself. Each request needs fresh verification.');
     console.log('No token replay, test keys, mocked responses, stealth flags or changed security settings are used.');
-    const answer = await terminal.question('Ready to begin or resume the remaining trials? Type RUN: ');
+    const answer = await terminal.question('Ready to run at most ' + trialLimit + ' unstarted trial(s)? Type RUN: ');
     if (answer !== 'RUN') return;
     browser = await chromium.launch({channel: options.browser ?? 'chrome', headless: false});
     const noJs = await browser.newContext({javaScriptEnabled: false});
@@ -141,7 +143,7 @@ async function main() {
       await saveSession(session, directory);
       console.log('Submitting now. Solve Turnstile if it appears, within the application deadline.');
     };
-    for (const trial of session.runs.filter(run => !run.timestamp)) {
+    for (const trial of pendingTrials(session.runs, trialLimit)) {
       activeTrial = trial;
       const testCase = dataset.find(item => item.id === trial.caseId);
       console.log(testCase.id + ', trial ' + trial.run + '/3');

@@ -6,6 +6,7 @@ import {createApiFixture, exerciseWorker, fixtureKey, fixtureSecret, fixtureNote
 import {exerciseChat} from './chat-workbench.mjs';
 import {advisoryText} from '../dist/advisory.js';
 import {agentNote} from '../dist/engine.js';
+import {metrics as productionMetrics, manualEvidenceMarkdown} from './live-support.mjs';
 
 if (process.argv.length !== 2) throw new Error('Usage: node evaluation/run-final.mjs');
 const load = async name => JSON.parse(await readFile(new URL(name, import.meta.url), 'utf8'));
@@ -13,6 +14,15 @@ const legacy = await load('cases.json');
 const apiCases = await load('final-cases.json');
 const liveCases = await load('live-cases.json');
 const guardCases = await load('advisory-cases.json');
+const optionalLoad = async name => {
+  try { return await load(name); }
+  catch (error) { if (error.code === 'ENOENT') return null; throw error; }
+};
+const manualVerification = await optionalLoad('manual-results.json');
+const productionEvidence = await optionalLoad('live-results.json');
+const productionAutomation = productionEvidence ? {
+  source: 'evaluation/live-results.json', summary: productionMetrics(productionEvidence.runs)
+} : null;
 const attempts = 3;
 const runs = [];
 
@@ -257,13 +267,16 @@ const result = {
   },
   summary: summarize(runs), offline: summarize(runs.filter(run => run.surface !== 'live')),
   live: summarize(runs.filter(run => run.surface === 'live')),
+  livePlanNote: 'The live field and live run entries are original plan placeholders. Observed production attempts and owner-reported manual checks are separate evidence, never substituted for these slots.',
+  productionAutomation, manualVerification,
   limitations: [
     'External HTTP, Google responses, Turnstile and limiter decisions are test doubles. Tests execute actual application, bridge and Worker code.',
     'No live model inference or refusal quality is measured by offline tests.',
     'Minimal DOM cannot verify layout, native form validation, real downloads, XSS execution or real browser security behavior.',
     'Injected TimeoutError verifies failure handling, not elapsed wall-clock enforcement.',
     'Injected unsupported model claims test the application guard, not the frequency of real model hallucinations. English-language pattern checks can miss paraphrases or overblock benign quoted/conditional text.',
-    'Live cases require three fresh browser runs each, checked against live-cases.json. Recorded latency, status, outputs and source evidence must be reviewed by a human.'
+    'Production Playwright verification was blocked by the unchanged Turnstile gate. No Worker/Gemini defect was demonstrated. Preserve all three failed attempts.',
+    'Owner-reported manual checks are separate from quantitative live performance. Confirm whether the rubric requires all 10 live cases three times; no live pass@1 or pass^3 is inferred from the short checklist.'
   ],
   failures: failures.map(({caseId, run, failureReason}) => ({caseId, run, failureReason})), runs
 };
@@ -272,22 +285,36 @@ const pct = value => value === null ? 'Unverified' : (100 * value).toFixed(1) + 
 const markdown = [
   '# RiskPilot final evaluation',
   '', 'Generated ' + result.generatedAt,
-  '', 'Actual app + Gemini bridge + Worker exercised with synthetic external responses and synthetic credentials. No live Gemini success is claimed.',
+  '', 'Automated final-system evaluation executes actual app, Gemini bridge and Worker code against synthetic external responses and synthetic credentials. Owner-reported manual live verification is shown separately.',
   '', '| Cohort | Cases | Trials | Pass | Fail | Manual required | pass@1 | pass^3 |',
   '| --- | ---: | ---: | ---: | ---: | ---: | --- | --- |',
-  ...[['Offline integration', result.offline], ['Live Gemini', result.live], ['All scheduled', result.summary]].map(([label, s]) =>
+  ...[['Automated offline final system', result.offline]].map(([label, s]) =>
     '| ' + [label, s.cases, s.trials, s.passed, s.failed, s.manualRequired, pct(s['pass@1']), pct(s['pass^3'])].join(' | ') + ' |'),
+  '', 'Coverage includes the current request schema, security guardrails, Milestone II regressions, edge/adversarial cases and model-output validation. Offline metrics do not measure genuine Gemini quality.',
+  '', '## Production live automation', '',
+  ...(productionAutomation ? [
+    'Saved production attempts: ' + productionAutomation.summary.executed + ' executed; '
+      + productionAutomation.summary.passed + ' passed; ' + productionAutomation.summary.failed + ' failed; '
+      + (productionAutomation.summary.totalSlots - productionAutomation.summary.executed) + ' unrun.',
+    'Production pass@1: ' + pct(productionAutomation.summary['pass@1']) + '; pass^3: ' + pct(productionAutomation.summary['pass^3']) + '.'
+  ] : ['No production attempts recorded.']), '',
+  'The three saved Playwright attempts stopped during browser verification with no Worker/Gemini response; trial 3 directly confirms zero Worker POSTs. Earlier attempts have matching fallback/timing but lack request-event diagnostics. No Worker or Gemini defect was demonstrated. All three remain failures.', '',
+  'Turnstile is an unchanged production security gate preventing this automated path. Cloudflare documents that automated browsers can be blocked; production Turnstile automation is not a supported verification path here. The precise provider challenge cause remains unknown. Do not weaken, bypass or replace the control.', '',
+  'Evidence: [live-results.md](live-results.md), live-results.json and [Cloudflare testing guidance](https://developers.cloudflare.com/turnstile/troubleshooting/testing/).',
+  '', '## Manual live verification', '', ...manualEvidenceMarkdown(manualVerification),
   '', '## Formulas', '', ...Object.entries(result.formulas).map(([name, formula]) => '- ' + name + ': ' + formula),
   '', '## Trial results', '', '| Case | Run | Status | Failed criteria |',
   '| --- | ---: | --- | --- |',
-  ...runs.map(run => '| ' + [run.caseId, run.run, run.status, run.criteriaFailed.join(', ') || '—'].join(' | ') + ' |'),
+  ...runs.filter(run => run.surface !== 'live').map(run => '| ' + [run.caseId, run.run, run.status, run.criteriaFailed.join(', ') || '-'].join(' | ') + ' |'),
+  '', '## Original live-plan placeholders', '',
+  'The 30 manual-required entries in final-results.json are the offline runner\'s plan, not executed production outcomes. Actual production attempts remain in live-results.json. Manual verification does not regrade either cohort.',
   '', '## Failure analysis', '',
   ...(failures.length ? failures.map(run => '- ' + run.caseId + ', run ' + run.run + ': ' + run.failureReason) : ['No observed offline failures in this run.']),
   '', 'Previous baseline b6cc09e had 15 failed trials. The request-format and unsupported-claim criteria remain in this suite. Current results above determine whether those defects are resolved.',
   '', 'Assessment requests now use the object schema, with real bridge/Worker validation exercised before mocked Google inference. Unsupported-action responses are checked by server and browser guards. No actual patch or external system action is performed.',
   '', '## Observed limitations', '', ...result.limitations.map(item => '- ' + item),
   '', '## Manual completion', '',
-  'Use evaluation/live-cases.json and evaluation/MANUAL.md. Preserve these offline results. Save real observations separately. Do not label fallback responses as successful Gemini trials.',
+  'See evaluation/MANUAL.md and manual-results.json for owner-reported completed checks. Recommendation: SHIP WITH GATES, retaining production Turnstile, advisory-only permissions and human approval. Provider logging/retention/billing and instructor acceptance of offline versus repeated live evidence remain owner responsibilities. No deployment is authorized by this report.',
   ''
 ].join('\n');
 await writeFile(new URL('final-results.md', import.meta.url), markdown);

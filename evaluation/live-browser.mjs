@@ -4,6 +4,15 @@ import {apiPayload, publicSite, workerOrigin, redact} from './live-support.mjs';
 const fields = ['cve', 'asset', 'environment', 'criticality', 'sensitivity', 'exposure', 'version'];
 const selectFields = new Set(['environment', 'criticality', 'sensitivity', 'exposure']);
 
+export function challengeBrowserFrameCount(page) {
+  // The ordinary DOM query cannot see a frame inside a closed shadow root.
+  // Playwright's frame tree observes attached frames without opening that root.
+  return page.frames().filter(frame => {
+    try { return new URL(frame.url()).hostname === 'challenges.cloudflare.com'; }
+    catch { return false; }
+  }).length;
+}
+
 export async function observeTrial(context, testCase, beforeSubmission) {
   const page = await context.newPage();
   page.setDefaultTimeout(10000);
@@ -11,6 +20,10 @@ export async function observeTrial(context, testCase, beforeSubmission) {
   const source = [];
   const downloads = [];
   const pendingResponses = [];
+  // Metadata only: never retain headers, tokens, full challenge URLs, or page HTML.
+  const diagnostics = {workerRequests: [], failedRequests: [], turnstileResponses: [], turnstileErrorCodes: [], pageErrorNames: [], states: []};
+  const boundedPush = (items, value) => { if (items.length < 40) items.push(value); };
+  const elapsed = () => Date.now() - started;
   let phase = 'initial';
   let collectorRequested = false;
   let submitted = false;
@@ -20,6 +33,10 @@ export async function observeTrial(context, testCase, beforeSubmission) {
     const responsePhase = phase;
     const task = (async () => {
       const url = new URL(response.url());
+      if (url.hostname === 'challenges.cloudflare.com') {
+        boundedPush(diagnostics.turnstileResponses, {resource: url.pathname === '/turnstile/v0/api.js' ? 'sdk' : 'challenge-resource',
+          status: response.status(), elapsedMs: elapsed()});
+      }
       if (url.origin === workerOrigin && ['/api/chat', '/api/risk-note'].includes(url.pathname)
         && response.request().method() === 'POST') {
         let payload;
@@ -55,10 +72,58 @@ export async function observeTrial(context, testCase, beforeSubmission) {
   };
   page.on('response', responseListener);
   page.on('request', request => {
-    try { if (new URL(request.url()).hostname === 'collector.example.invalid') collectorRequested = true; }
+    try {
+      const url = new URL(request.url());
+      if (url.hostname === 'collector.example.invalid') collectorRequested = true;
+      if (url.origin === workerOrigin && ['/api/chat', '/api/risk-note'].includes(url.pathname) && request.method() === 'POST') {
+        boundedPush(diagnostics.workerRequests, {phase, path: url.pathname, elapsedMs: elapsed()});
+      }
+    }
     catch { /* No request data or verification token is retained. */ }
   });
+  page.on('requestfailed', request => {
+    const url = new URL(request.url());
+    if (url.origin !== workerOrigin && url.hostname !== 'challenges.cloudflare.com') return;
+    const failure = request.failure()?.errorText ?? '';
+    boundedPush(diagnostics.failedRequests, {
+      service: url.origin === workerOrigin ? 'worker' : 'turnstile',
+      networkError: /^net::[A-Z_]+$/.test(failure) ? failure : 'Network request failed', elapsedMs: elapsed()
+    });
+  });
+  page.on('console', message => {
+    const text = message.text();
+    if (/turnstile/i.test(text)) {
+      for (const code of text.match(/\b\d{6}\b/g) ?? []) {
+        if (!diagnostics.turnstileErrorCodes.includes(code)) boundedPush(diagnostics.turnstileErrorCodes, code);
+      }
+    }
+  });
+  page.on('pageerror', error => boundedPush(diagnostics.pageErrorNames,
+    /^[A-Za-z]+Error$/.test(error.name) ? error.name : 'PageError'));
   page.on('download', download => downloads.push(download));
+  let sampling;
+  let sampleKey;
+  const sampleState = () => {
+    if (sampling) return sampling;
+    sampling = page.evaluate(surface => {
+      const status = document.querySelector(surface === 'chat' ? '#chat-gemini-status' : '#gemini-status');
+      const challenge = document.querySelector(surface === 'chat' ? '#chat-gemini-challenge' : '#gemini-challenge');
+      const bounds = challenge?.getBoundingClientRect();
+      return {status: status?.textContent ?? '', documentVisible: document.visibilityState === 'visible',
+        documentFocused: document.hasFocus(), sdkAvailable: typeof globalThis.turnstile?.getResponse === 'function',
+        challengeShown: Boolean(challenge && !challenge.hidden),
+        challengeInViewport: Boolean(bounds && bounds.width > 0 && bounds.height > 0
+          && bounds.top >= 0 && bounds.bottom <= innerHeight && bounds.left >= 0 && bounds.right <= innerWidth),
+        challengeFrameCount: challenge?.querySelectorAll('iframe').length ?? 0,
+        tokenPresent: [...document.querySelectorAll('input[name="cf-turnstile-response"]')].some(input => Boolean(input.value))};
+    }, testCase.surface).then(state => {
+      state.challengeBrowserFrameCount = challengeBrowserFrameCount(page);
+      const key = JSON.stringify(state);
+      if (key !== sampleKey) { sampleKey = key; boundedPush(diagnostics.states, {...state, elapsedMs: elapsed()}); }
+    }).catch(() => {}).finally(() => { sampling = undefined; });
+    return sampling;
+  };
+  let sampleTimer;
   const approvalState = async () => ({
     status: await page.locator('#approval-status').innerText(),
     disabled: await page.locator('#download').isDisabled(), downloadCount: downloads.length
@@ -78,8 +143,10 @@ export async function observeTrial(context, testCase, beforeSubmission) {
   try {
     const url = publicSite + (testCase.surface === 'assessment' ? 'assessment.html' : '');
     await page.goto(url, {waitUntil: 'domcontentloaded', timeout: 30000});
+    await sampleState();
+    sampleTimer = setInterval(sampleState, 100);
     const observation = {timestamp, urlUnchanged: true, modelOutput: null, api, source,
-      collectorRequested: false, credentialLikeOutput: false, stages: [], report: null, approval: {}};
+      collectorRequested: false, credentialLikeOutput: false, stages: [], report: null, approval: {}, diagnostics};
     if (testCase.surface === 'chat') {
       await page.locator('#chat-form').waitFor({state: 'visible'});
       await page.locator('#chat-gemini').check();
@@ -159,6 +226,7 @@ export async function observeTrial(context, testCase, beforeSubmission) {
         observation.approval.source = 'Automated functional test using synthetic input';
       }
     }
+    await sampleState();
     await Promise.all(pendingResponses);
     observation.collectorRequested = collectorRequested;
     observation.urlUnchanged = page.url() === url;
@@ -172,10 +240,12 @@ export async function observeTrial(context, testCase, beforeSubmission) {
     await Promise.all(pendingResponses);
     error.observation = submitted ? {
       timestamp, modelOutput: null, api, source, elapsedMs: Date.now() - started,
-      failure: 'Browser operation failed after submission', collectorRequested
+      failure: 'Browser operation failed after submission', collectorRequested, diagnostics
     } : null;
     throw error;
   } finally {
+    clearInterval(sampleTimer);
+    if (sampling) await sampling;
     await page.close();
   }
 }
