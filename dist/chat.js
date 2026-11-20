@@ -2,6 +2,7 @@ import {findScenario, scenarios} from './scenarios.js';
 import {practiceCases} from './practice.js';
 import {demos, demoLabel} from './demos.js';
 import {publicGeminiAvailable, setupGemini} from './gemini.js';
+import {appendGuidance} from './chat-format.js';
 
 const conversation = document.getElementById('conversation');
 const suggestions = document.getElementById('suggestions');
@@ -34,7 +35,7 @@ const lessons = [
    'First, confirm your system uses the affected software and version. Then ask the system owner to check the vendor’s fix and test the change. RiskPilot gives you a plan and points out which details still need a human to verify.']
 ];
 
-function appendTurn(speaker, paragraphs, link) {
+function appendTurn(speaker, paragraphs, link, structured = false) {
   const turn = document.createElement('div');
   turn.className = speaker === 'You' ? 'turn user' : 'turn';
   const label = document.createElement('span');
@@ -42,7 +43,8 @@ function appendTurn(speaker, paragraphs, link) {
   label.textContent = speaker;
   const bubble = document.createElement('div');
   bubble.className = 'bubble';
-  for (const text of paragraphs) {
+  if (structured) appendGuidance(bubble, paragraphs[0], document);
+  else for (const text of paragraphs) {
     const paragraph = document.createElement('p');
     paragraph.textContent = text;
     bubble.append(paragraph);
@@ -251,7 +253,7 @@ form.addEventListener('submit', async event => {
       appendTurn('You', [text]);
       appendTurn('RiskPilot · Gemini', [answer], cve
         ? {href: 'assessment.html?cve=' + encodeURIComponent(cve), label: 'Assess ' + cve}
-        : undefined);
+        : undefined, true);
     } else {
       reply(text);
     }

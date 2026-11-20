@@ -29,7 +29,7 @@ export async function exerciseChat(testCase) {
     globalThis.fetch = api.fetch;
     const chatUrl = new URL('../dist/chat.js', import.meta.url);
     let source = await readFile(chatUrl, 'utf8');
-    for (const name of ['scenarios', 'practice', 'demos', 'gemini']) {
+    for (const name of ['scenarios', 'practice', 'demos', 'gemini', 'chat-format']) {
       const url = new URL(name + '.js', chatUrl);
       if (name === 'gemini') url.search = 'chat-trial=' + ++trial;
       source = source.replace("'./" + name + ".js'", JSON.stringify(url.href));
@@ -45,11 +45,15 @@ export async function exerciseChat(testCase) {
       }
       await first;
     }
+    const modelParagraphs = node => [
+      ...(node.dataset.modelText === 'true' ? [node.textContent] : []),
+      ...node.children.flatMap(modelParagraphs)
+    ];
     return {
       status: get('chat-gemini-status').textContent,
       turns: get('conversation').children.map(turn => ({
         speaker: turn.children[0].textContent,
-        text: turn.children[1].children.filter(node => node.tag === 'p').map(node => node.textContent).join('\n'),
+        text: modelParagraphs(turn.children[1]).join('') || turn.children[1].children.filter(node => node.tag === 'p').map(node => node.textContent).join('\n'),
         links: turn.children[1].children.filter(node => node.tag === 'a').map(node => node.href)
       })),
       calls: api.calls,

@@ -157,7 +157,12 @@ export async function observeTrial(context, testCase, beforeSubmission) {
       await page.waitForFunction(() => !document.getElementById('question').disabled, null, {timeout: 60000});
       observation.geminiStatus = await page.locator('#chat-gemini-status').innerText();
       const turns = page.locator('#conversation .turn').filter({has: page.locator('.speaker', {hasText: 'Gemini'})});
-      if (await turns.count()) observation.modelOutput = await turns.last().locator('.bubble').innerText();
+      if (await turns.count()) {
+        const bubble = turns.last().locator('.bubble');
+        const modelText = bubble.locator('[data-model-text]');
+        observation.modelOutput = await modelText.count()
+          ? (await modelText.allTextContents()).join('') : await bubble.innerText();
+      }
       observation.fallbackText = observation.modelOutput ? null : redact(await page.locator('#conversation .turn').last().innerText());
     } else {
       await page.locator('#assessment').waitFor({state: 'visible'});
