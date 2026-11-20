@@ -68,6 +68,44 @@ export function newSession(cases, snapshot) {
   };
 }
 
+export function pendingTrials(runs, limit = 30) {
+  if (!Number.isInteger(limit) || limit < 1 || limit > 30) throw new Error('Trial limit must be an integer from 1 to 30.');
+  return runs.filter(run => !run.timestamp && run.status === 'not-run').slice(0, limit);
+}
+
+export function diagnoseLiveFailure(observation) {
+  const responses = observation.api ?? [];
+  const requests = observation.diagnostics?.workerRequests;
+  const responseReceived = responses.length > 0;
+  const requestSent = responseReceived ? true : Array.isArray(requests) ? requests.length > 0 : null;
+  const modelReceived = responses.some(call => call.status === 200 && typeof call.note === 'string' && call.note.trim());
+  const states = observation.diagnostics?.states ?? [];
+  let stage = 'undetermined-before-model-output';
+  let reason = observation.diagnostics
+    ? 'Diagnostics captured no Worker response; inspect verification states and request failures. Exact cause is unverified.'
+    : 'No Worker response captured. Legacy capture did not record failed requests or verification diagnostics; exact cause is unverified.';
+  if (requestSent === false && states.some(state => state.status?.startsWith('Verifying your browser for Gemini'))) {
+    stage = 'verification-before-worker';
+    reason = 'Browser verification did not reach a Worker POST. Inspect Turnstile resource statuses and error codes; no upstream Gemini failure is established.';
+  } else if (requestSent && !responseReceived) {
+    stage = 'worker-request-without-response';
+    reason = 'Worker POST was emitted but no HTTP response was captured. Inspect failedRequests; this does not prove that Google received a request.';
+  } else if (responseReceived && !modelReceived) {
+    stage = 'worker-http-or-response-failure';
+    reason = 'Worker HTTP observation: ' + responses.map(call => call.path + ' ' + call.status + (call.error ? ' (' + call.error + ')' : '')).join('; ');
+  } else if (modelReceived && !observation.modelOutput) {
+    stage = 'display-or-output-capture';
+    reason = 'Worker returned a model note, but no displayed model output was captured.';
+  } else if (modelReceived) {
+    stage = 'model-output-received';
+    reason = 'A real Worker model note was captured; remaining objective or semantic criteria still apply.';
+  }
+  return {stage, reason, workerRequestSent: requestSent, workerResponseReceived: responseReceived,
+    modelResponseReceived: modelReceived,
+    turnstileClientTokenObserved: observation.diagnostics ? states.some(state => state.tokenPresent) || requestSent === true : null,
+    turnstileServerVerified: modelReceived ? true : null};
+}
+
 export function gradeObserved(testCase, observation) {
   const checks = [];
   const add = (id, passed) => checks.push({id, passed: Boolean(passed)});
@@ -160,6 +198,9 @@ export function applyObservation(trial, testCase, observation) {
   trial.pass = trial.criteriaFailed.length ? false : trial.criteriaPending.length ? null : true;
   trial.status = trial.pass === true ? 'pass' : trial.pass === false ? 'fail' : 'needs-review';
   trial.failureReason = trial.criteriaFailed.length ? trial.criteriaFailed.join(', ') : null;
+  if (trial.criteriaFailed.includes('live-api-success')) {
+    trial.failureReason += '. ' + diagnoseLiveFailure(observation).reason;
+  }
 }
 
 export function reviewTrial(trial, criteria, decisions) {
@@ -195,9 +236,25 @@ export function metrics(runs) {
   };
 }
 
-export async function saveSession(session, directory) {
-  session.updatedAt = new Date().toISOString();
-  session.metrics = metrics(session.runs);
+export function manualEvidenceMarkdown(manual) {
+  if (!manual) return ['Manual live verification has not been recorded. See [MANUAL.md](MANUAL.md).'];
+  return [
+    'Source: owner-reported ordinary-browser verification; not an automated live cohort.', '',
+    '| Manual workflow | Reported outcome |', '| --- | --- |',
+    ...manual.workflows.map(item => '| ' + item.id + ' | ' + item.status.toUpperCase() + ' |'), '',
+    'Approval/export checks: ' + manual.approvalChecks.map(item => item.id + ' ' + item.status.toUpperCase()).join('; ') + '.', '',
+    'Details: [MANUAL.md](MANUAL.md) and [manual-results.json](manual-results.json). No live pass@1 or pass^3 is inferred.',
+    'Exact execution timestamps and verbatim model outputs were not supplied. The three Playwright failures remain failures.'
+  ];
+}
+
+export function renderLiveMarkdown(session, manual) {
+  const summary = metrics(session.runs);
+  const phishing = session.runs.filter(run => run.caseId === 'live-chat-phishing' && run.timestamp);
+  const detailed = phishing.find(run => run.run === 3)?.evidence;
+  const boundary = phishing.length === 3 && detailed?.diagnostics?.workerRequests?.length === 0
+    ? 'The three recorded Playwright attempts failed during browser verification, with no Worker/Gemini response. Trial 3 directly confirms zero Worker POSTs; trials 1 and 2 have consistent timing but lack request-event diagnostics. No Worker or Gemini defect was demonstrated.'
+    : 'Observed production outcomes are listed below. Unrun slots and manual observations never become automated passes.';
   const format = value => value === null ? 'Unverified' : (100 * value).toFixed(1) + '%';
   const cell = text => String(text ?? '—').replaceAll('|', '\\|').replaceAll('\n', ' ');
   const md = [
@@ -208,9 +265,14 @@ export async function saveSession(session, directory) {
     'Worker identity: ' + (session.workerEvidence ? 'owner-attested version ' + session.workerEvidence.version : 'not confirmed') + '.',
     '', '| Executed | Pass | Fail | Pending | pass@1 | pass^3 |',
     '| ---: | ---: | ---: | ---: | --- | --- |',
-    '| ' + [session.metrics.executed, session.metrics.passed, session.metrics.failed, session.metrics.pending,
-      format(session.metrics['pass@1']), format(session.metrics['pass^3'])].join(' | ') + ' |',
+    '| ' + [summary.executed, summary.passed, summary.failed, summary.pending,
+      format(summary['pass@1']), format(summary['pass^3'])].join(' | ') + ' |',
     '', 'pass@1 = cases passing first trial / 10. pass^3 = cases passing all three / 10. Pending values remain unverified.',
+    '', '## Interpretation: production security gate', '',
+    boundary, '',
+    'Production Turnstile is an unchanged security gate preventing this automated evaluation path. Cloudflare documents that Playwright may be detected and blocked; the precise provider cause was not captured. Production automation is not a supported live-verification path here. All failed and unrun slots retain their original outcomes.', '',
+    'Reference: [Cloudflare testing guidance](https://developers.cloudflare.com/turnstile/troubleshooting/testing/).',
+    '', '## Manual live verification', '', ...manualEvidenceMarkdown(manual),
     '', '## Trials', '', '| Case | Run | Timestamp | Status | Failed criteria / reason |',
     '| --- | ---: | --- | --- | --- |',
     ...session.runs.map(run => '| ' + [run.caseId, run.run, run.timestamp, run.status, run.failureReason].map(cell).join(' | ') + ' |'),
@@ -226,10 +288,21 @@ export async function saveSession(session, directory) {
       '### ' + run.caseId + ', run ' + run.run, '',
       ...(run.modelOutput ?? '(No model output)').replace(/\r\n?/g, '\n').split('\n').map(line => '    ' + line), '',
       'API status: ' + (run.evidence?.api?.map(call => call.path + ' ' + call.status).join(', ') || 'no API response captured') + '.',
+      'Capture diagnosis: ' + diagnoseLiveFailure(run.evidence ?? {}).reason,
+      ...(run.evidence?.diagnostics ? ['Diagnostics: ' + JSON.stringify(run.evidence.diagnostics)] : []),
       'Pending semantic criteria: ' + (run.criteriaPending.join('; ') || 'none') + '.', ''
     ])
   ].join('\n');
+  return md.trimEnd() + '\n';
+}
+
+export async function saveSession(session, directory) {
+  session.updatedAt = new Date().toISOString();
+  session.metrics = metrics(session.runs);
+  let manual = null;
+  try { manual = JSON.parse(await readFile(new URL('manual-results.json', directory), 'utf8')); }
+  catch (error) { if (error.code !== 'ENOENT') throw error; }
   // Each write completes before the next trial. Resume never reruns recorded trials.
   await writeFile(new URL('live-results.json', directory), JSON.stringify(session, null, 2) + '\n');
-  await writeFile(new URL('live-results.md', directory), md.trimEnd() + '\n');
+  await writeFile(new URL('live-results.md', directory), renderLiveMarkdown(session, manual));
 }

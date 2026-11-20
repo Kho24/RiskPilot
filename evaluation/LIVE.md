@@ -1,146 +1,73 @@
-# Real Gemini/Cloudflare evaluation
+# Production live verification: automation blocked
 
-The offline suite measures code using test doubles. This workflow opens the
-real public pages, lets their real Turnstile flow run, and captures actual
-Worker responses. It never replaces Gemini, mocks an API, exports verification
-tokens, injects a successful verification, changes the allowed origin, or
-replays a token. The application code and secrets are unchanged.
+## Three evidence sets
 
-## Current stop point
+| Evidence | Recorded result | What it establishes |
+| --- | --- | --- |
+| Automated final-system evaluation | 231/231 offline trials; 77 cases x 3; pass@1 and pass^3 100% | Current schema, guardrails, regression/adversarial coverage and output validation against synthetic providers |
+| Production Playwright | 3 failures; 27 unrun slots | Verification stopped before model output; trial 3 directly confirms zero Worker POSTs |
+| Ordinary-browser manual verification | PASS, owner-reported | Gemini chat, real CVE/all stages, adversarial response and six approval/export checks |
 
-The source candidate is committed locally. The current report records no live
-trials: the frontend preflight could not resolve the public host here.
-The fixed frontend and Worker must be made available through an owner-approved
-release/test process before the current candidate can be verified live.
-This preparation does not authorize deployment.
+The three production attempts remain failed in live-results.json and
+live-results.md. All had browser-verification fallback and no Worker/Gemini
+response. Trial 3 captured SDK/challenge resources, visible/focused browser
+state, no token and zero Worker POSTs before the frontend's 12-second deadline.
+Trials 1 and 2 have matching timing but lack request-event diagnostics.
+The one challenge-resource HTTP 401 does not identify the precise provider cause.
+No Worker or Gemini defect was demonstrated.
 
-The existing code restricts Gemini to https://kho24.github.io and uses the
-fixed riskpilot-api.kho24.workers.dev endpoint. A localhost preview exercises
-fallback behavior. Using local source while claiming it is the public origin
-would not verify the deployed system, so the runner does not do that.
+## Preserve the production security gate
 
-## Prerequisites
+Turnstile prevents this instrumented automated browser from reaching the API.
+Cloudflare documents that Playwright can be detected as a bot and blocked.
+Production Turnstile automation is not a supported verification path here.
+Do not resume the production suite or change keys, Turnstile, deadlines,
+allowed origins or evaluation criteria to make it pass. Do not use test keys,
+token replay, stealth changes or simulated responses as production evidence.
+This does not claim that Turnstile blocks every bot or prevents prompt injection.
 
-Run --check first; it needs only Node and Git and makes no inference requests.
-Install optional browser tooling only after the approved frontend passes the
-version gate.
+The owner completed [MANUAL.md](MANUAL.md) in an ordinary browser and reported
+success, including genuine Turnstile and Gemini responses. The separate
+[manual-results.json](manual-results.json) records those supplied observations;
+exact execution timestamps and transcripts were not supplied. Reproduction
+steps remain in MANUAL.md. Do not rerun production automation for this evidence.
+The short manual release checklist is not a completed 10-case x 3 genuine-model
+study; confirm whether the instructor requires that additional live study.
+The original live-cases.json criteria remain unchanged.
 
-From the RiskPilot repository root, with Node.js 24+ and Chrome installed:
+## Safe read-only checks
 
-```powershell
-npm.cmd --prefix evaluation/browser install --ignore-scripts --package-lock=false
-```
+    node evaluation/run-live.mjs --check
+    node --test evaluation/live-support.test.mjs
 
-On macOS/Linux use npm in place of npm.cmd. This installs pinned browser
-tooling outside the application. No Google key, Turnstile secret or API token
-is needed. Chrome is launched visibly. Edge can be selected with
---browser msedge. Optional RISKPILOT_PLAYWRIGHT_PATH can point to an already
-installed Playwright module for a development environment; it is not an API
-configuration variable.
+The first command compares public frontend hashes to committed source and
+makes no inference request. The second runs offline harness bookkeeping,
+redaction and diagnostic regression checks; it writes no live successes.
+The saved cohort's frontend parity passed. The active Worker version/source
+must be verified by the owner in Cloudflare; there is no automatic backend
+version endpoint. A localhost preview uses fallback, not the real public
+Gemini bridge.
 
-## Three commands
+The runner code and optional browser tooling are retained for reproducibility
+and diagnosis. They are not a supported production challenge bypass. Normal
+operation obtains a fresh, single-use verification token per API request.
 
-1. Check frontend reachability/version:
+## Evidence handling
 
-```powershell
-node evaluation/run-live.mjs --check
-```
+Raw observations, failed criteria and the prior diagnostic explanation remain
+preserved. The classifier correction recognizes the frontend's ellipsis.
+New diagnostic capture counts the browser frame tree as well as the DOM, whose
+query can miss a frame inside a shadow root. Neither correction changes grades.
 
-This reads five deployed JavaScript files and compares normalized SHA-256
-hashes to the committed local candidate. It also rejects uncommitted changes
-to the core JavaScript or Worker/config. A mismatch or network failure stops
-all new trials. It is a read-only check, not a deployment.
+Do not reset, delete or overwrite the three failures with successful manual
+observations. Save manual notes/screenshots and the approved fictional report
+separately. Never retain tokens, headers, cookies, HAR or credentials.
+Fallback and unrun slots never count as successful Gemini trials. The production
+metrics remain unverified while the cohort has pending slots; offline 100%
+metrics must never be presented as live Gemini performance.
 
-2. In Cloudflare, verify that the active Worker source/config matches
-worker/index.mjs and worker/wrangler.toml from the candidate. Copy its version
-UUID only. Then run:
+## References
 
-```powershell
-node evaluation/run-live.mjs --run --worker-version YOUR_VERIFIED_VERSION_UUID
-```
-
-The Worker version is an owner attestation because no deployed version
-endpoint exists. It is explicitly labeled as such in the report.
-The runner opens the actual site and asks you to type RUN before paid calls.
-Keep the browser visible and complete any challenge yourself.
-
-Trials use a fresh page and application state. One ephemeral browser context
-retains only normal provider verification state during the run. Context and
-browser are closed afterward. No persistent browser profile is exported.
-
-Each request obtains fresh Turnstile verification through the app. Existing
-12-second verification and other app deadlines are unchanged. A provider may
-block browser automation despite human participation. In that event the runner
-records the failure and stops; it cannot guarantee one click for all trials.
-
-The runner spaces submissions at least 16 seconds apart. No failed trial is
-silently retried. An approved-report reset is a deliberate additional
-assessment within that test, not a retry. Three invalid-CVE trials correctly
-make no Gemini call; with the three approval-reset runs the planned successful
-suite uses up to 30 Worker generation requests.
-
-3. Review captured semantic criteria:
-
-```powershell
-node evaluation/run-live.mjs --review
-```
-
-Read the displayed outputs, then enter p, f or ? for each listed run. For an
-all-correct case the grouped response is typically p p p. For f, select failing
-criterion numbers; other criteria remain unverified until resolved. Review
-history is retained. Objective failures cannot be overridden by a semantic
-pass. Quality/refusal judgments are not inferred from keyword matches.
-
-The asset-injection criterion about Google data minimization uses observed
-browser-to-Worker fields plus the reviewed, owner-attested Worker code.
-The browser cannot directly observe Cloudflare's private Google request.
-Leave that criterion unverified if Worker parity has not been established.
-
-## Saved evidence and resume
-
-- live-results.json contains all 30 slots, case/run IDs, timestamps,
-  final displayed model output, returned API note, sanitized payload fields,
-  HTTP/source statuses, report context, scores, trace, approval/download
-  checks, criteria, reviewer decisions and concise failure reasons.
-- live-results.md contains a summary, side-by-side pass@1/pass^3, failures,
-  pending criteria and captured outputs.
-- --prepare creates the plan without network/API requests. --check records
-  preflight only. Neither constitutes a live trial.
-- Repeating --run resumes only unstarted trials with the same source hashes,
-  dataset and Worker version. Recorded failures remain failures.
-- An in-progress record from an interruption is not automatically replayed.
-  Archive the cohort or resolve it explicitly after inspecting what happened.
-- To run a new cohort, move both previous reports to an archive first.
-  Nothing automatically deletes or overwrites completed observations with
-  fresh trial attempts.
-
-Expected outputs contain only fictional inputs. Credentials resembling known
-formats are redacted and flagged. No HTTP headers, verification tokens, cookies,
-screenshots, traces/HAR, provider private logs or downloaded reports are
-committed by the runner. Downloads are inspected in the browser's temporary
-directory and discarded with the browser context.
-
-pass@1 = cases passing first run / 10. pass^3 = cases passing all three / 10.
-These remain provisional instructor definitions. Until every trial is
-resolved, both metrics remain null/unverified. Fallback is a failed live
-Gemini trial, even if its built-in answer is helpful.
-
-## Checks available here
-
-```sh
-node --test evaluation/live-support.test.mjs
-```
-
-These checks cover bookkeeping, redaction and grading boundaries only. They
-make no provider calls and write no invented live observations.
-Real browser capture and Playwright installation remain unverified in this
-restricted environment until an owner runs the workflow successfully.
-
-## Provider documentation
-
-- Single-use tokens and server validation:
-  https://developers.cloudflare.com/turnstile/get-started/server-side-validation/
-- Cloudflare notes that automated browsers may be challenged or blocked:
-  https://developers.cloudflare.com/turnstile/troubleshooting/testing/
-- Playwright browser library:
-  https://playwright.dev/docs/library
+- [Cloudflare automation testing guidance](https://developers.cloudflare.com/turnstile/troubleshooting/testing/)
+- [Cloudflare client-side error codes, including challenge HTTP 401](https://developers.cloudflare.com/turnstile/troubleshooting/client-side-errors/error-codes/)
+- [Token server validation](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/)

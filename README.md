@@ -11,8 +11,16 @@ missing context. A human must approve the report before final advisory export.
 
 Final candidate recommendation: **SHIP WITH GATES**. The assessment request
 schema is corrected and model output passes an advisory-action guard.
-Offline tests cover both fixes. Live model trials and dashboard/browser
-verification are release gates, followed by owner deployment approval.
+The automated final-system evaluation passed 231/231 offline trials (77 cases
+x 3; pass@1 and pass^3 both 100%). Three production Playwright attempts failed
+at browser verification, with no Worker/Gemini response; trial 3 directly
+recorded zero Worker POSTs. Turnstile is a production security gate preventing
+this automation path, not evidence of a confirmed Worker/Gemini defect.
+The owner reports final ordinary-browser Gemini chat, live CVE/stages, adversarial
+output and all six approval/export checks PASS. These observations are recorded
+separately in evaluation/manual-results.json and MANUAL.md; they do not imply a
+repeated live-model pass rate. Operational dashboard review and owner release
+approval remain responsibilities. Turnstile and evaluation criteria stay intact.
 See security/AUDIT.md and security/SECURITY-REVIEW.md.
 
 ## Prerequisites and clean setup
@@ -112,39 +120,40 @@ in commit b6cc09e. Current criteria retain those checks and add action-claim
 and safe-advice regressions. Offline success does not establish live inference
 quality.
 
-evaluation/live-cases.json defines 10 live cases, including edge/adversarial
-cases, to run three times each from fresh browser state. evaluation/MANUAL.md
-explains setup, evidence and semantic scoring. Those 30 trials remain
-manual-required. No deployment secret or paid inference is used offline.
+evaluation/live-cases.json preserves 10 live cases and their known-good criteria.
+Production evidence in evaluation/live-results.json records three failed
+automation attempts and 27 unrun slots; these are separate from the offline
+runner's live-plan placeholders. No deployment secret or paid inference is used
+offline. Evaluation/MANUAL.md contains the minimal ordinary-browser release check.
+Confirm whether the instructor additionally requires all 10 cases x 3 genuine
+model trials; the short checklist does not satisfy such a repeated live study.
 
-## Run the live Gemini evaluation
+## Verify live Gemini manually
 
-The semi-automated runner uses the real public frontend, Cloudflare Worker and
-fresh Turnstile verification. Optional browser tooling is separate from the
-application:
+Use an ordinary Chrome/Edge window on the public links and complete genuine
+Turnstile yourself. Follow evaluation/MANUAL.md: real Gemini chat; a real CVE
+assessment with Risk Analyst, Remediation, Reviewer and approval/export; and one
+prompt-injection/action-claim test. Record actual answers and outcomes separately.
+Fallback is not a successful Gemini response. The owner reports these checks
+completed successfully; see evaluation/manual-results.json for the exact scope.
+
+Do not resume the production Playwright suite. Cloudflare documents that
+automated browsers can be detected and blocked, so production Turnstile
+automation is not a supported live-verification path here. The three failures
+are preserved; no keys, verification controls, timeouts or criteria are changed.
+See evaluation/LIVE.md and https://developers.cloudflare.com/turnstile/troubleshooting/testing/.
+
+Read-only frontend parity and offline harness checks remain available:
 
     node evaluation/run-live.mjs --check
-    npm --prefix evaluation/browser install --ignore-scripts --package-lock=false
-    node evaluation/run-live.mjs --run --worker-version YOUR_VERIFIED_VERSION_UUID
-    node evaluation/run-live.mjs --review
-
-On Windows PowerShell use npm.cmd. Verify the active Worker source/config in
-Cloudflare before supplying its non-secret version UUID. Keep Chrome visible
-and solve genuine challenges. The runner fills cases, captures outputs/status
-and tests approval/export automatically. Read remaining semantic criteria
-using the grouped review prompt. It never counts fallback or unrun trials as
-successful live Gemini tests.
-
-The public frontend must match the committed source. Current local commits
-must first become available through the owner's approved release process;
-the runner does not publish them. A check failure stops execution without
-inference requests. Preparing the plan and unit checks needs no Playwright:
-
-    node evaluation/run-live.mjs --prepare
     node --test evaluation/live-support.test.mjs
 
-See evaluation/LIVE.md and the reduced evaluation/MANUAL.md. Live results are
-saved separately in evaluation/live-results.json and live-results.md.
+The parity check compares deployed JavaScript hashes with committed sources;
+it sends no model request and requires no Playwright. Active Worker identity
+requires owner verification in Cloudflare. Saved frontend parity passed for the
+recorded cohort; this does not establish future deployment parity or real-model
+quality. Keep evaluation/live-results.json and live-results.md as observed
+automation evidence, separate from new manual verification notes.
 
 Provisional formulas awaiting instructor confirmation:
 
