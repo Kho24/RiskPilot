@@ -1,6 +1,6 @@
 # RiskPilot - final security review
 
-**Owner:** [YOUR FULL NAME], student/project owner. **Review:** 2026-11-19.
+**Owner:** kho24, student/project owner. **Review:** 2026-11-19.
 **Recommendation: SHIP WITH GATES**, retaining existing controls and owner release approval.
 
 RiskPilot provides educational chat and vulnerability advisories. Read-only CVE
