@@ -8,7 +8,16 @@
 <link rel="stylesheet" href="style.css"><script type="module" src="app.js"></script>
 </head>
 <body>
-<header class="top"><div class="wrap top-inner"><a class="brand" href="./"><span class="logo" aria-hidden="true">◈</span> RiskPilot</a><span class="top-divider"></span><span class="top-label">VULNERABILITY WORKBENCH</span><span class="top-status"><i></i> Assessment console</span></div></header>
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="brand" href="./"><span class="logo" aria-hidden="true">◈</span> RiskPilot</a>
+    <nav class="site-nav" aria-label="RiskPilot mode">
+      <a href="./">Guided Chat</a>
+      <a href="assessment.html" aria-current="page">Assessment Workbench</a>
+    </nav>
+    <p class="mode-intro">Choose how you want to use RiskPilot: guided security help or structured risk analysis.</p>
+  </div>
+</header>
 <main class="wrap">
 <section class="hero"><div class="eyebrow"><span>01</span> / SECURITY OPERATIONS</div><h1>Vulnerability assessment<span>.</span></h1><p>Investigate a CVE in the context of your asset and turn the evidence into a remediation plan.</p></section>
 <div class="workspace">
