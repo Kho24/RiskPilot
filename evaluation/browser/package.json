@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "description": "Optional tooling for real RiskPilot browser evaluation only",
+  "dependencies": {
+    "playwright": "1.62.1"
+  }
+}

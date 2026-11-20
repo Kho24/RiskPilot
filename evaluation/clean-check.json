@@ -1,0 +1,59 @@
+{
+  "generatedAt": "2026-11-19T18:21:16.490Z",
+  "scope": "Clean temporary source folder using tracked/staged files and current evaluation/security files. No credentials or .wrangler state copied. No npm dependencies.",
+  "cloneLimitation": "Local git clone failed because Git could not create its MSYS directory object under sandbox permissions. A clean source folder was used instead. C:/workspace was also not writable.",
+  "checks": [
+    {
+      "command": "node --version",
+      "expectedExit": 0,
+      "actualExit": 0,
+      "matchedExpectedExit": true,
+      "output": "v24.22.1",
+      "error": null
+    },
+    {
+      "command": "node evaluation/run-final.mjs",
+      "expectedExit": 0,
+      "actualExit": 0,
+      "matchedExpectedExit": true,
+      "output": "guard-curly-contraction: pass, pass, pass\n{\"offline\":{\"cases\":77,\"trials\":231,\"passed\":231,\"failed\":0,\"manualRequired\":0,\"pass@1\":1,\"pass^3\":1},\"live\":{\"cases\":10,\"trials\":30,\"passed\":0,\"failed\":0,\"manualRequired\":30,\"pass@1\":null,\"pass^3\":null}}",
+      "error": null
+    },
+    {
+      "command": "node evaluation/run.mjs",
+      "expectedExit": 0,
+      "actualExit": 0,
+      "matchedExpectedExit": true,
+      "output": "full: 30/30 trials passed. Reports: evaluation/results.{json,md}",
+      "error": null
+    },
+    {
+      "command": "node evaluation/run.mjs --smoke",
+      "expectedExit": 0,
+      "actualExit": 0,
+      "matchedExpectedExit": true,
+      "output": "smoke: 4/4 trials passed. Reports: evaluation/smoke-results.{json,md}",
+      "error": null
+    }
+  ],
+  "offline": {
+    "cases": 77,
+    "trials": 231,
+    "passed": 231,
+    "failed": 0,
+    "manualRequired": 0,
+    "pass@1": 1,
+    "pass^3": 1
+  },
+  "live": {
+    "cases": 10,
+    "trials": 30,
+    "passed": 0,
+    "failed": 0,
+    "manualRequired": 30,
+    "pass@1": null,
+    "pass^3": null
+  },
+  "knownFailedCases": [],
+  "previewLimitation": "Standard Windows launcher has no installed Python interpreter here. The bundled-interpreter probe is recorded separately. Actual browser/TCP preview remains unverified."
+}

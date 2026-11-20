@@ -149,7 +149,7 @@ async function run(findings) {
       if (publicGeminiAvailable && get('gemini').checked) {
         if (findings.length === 1 && evidence.state === 'PUBLISHED' && Number.isFinite(evidence.score)) {
           try {
-            cloudNote = await geminiNote(finding.cve, evidence.score);
+            cloudNote = await geminiNote({cve: finding.cve, score: evidence.score});
             log('Risk Analyst: Gemini note generated.');
           } catch {
             log('Risk Analyst: Gemini note unavailable. Assessment retained.');

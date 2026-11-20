@@ -1,0 +1,234 @@
+[
+  {
+    "id": "guard-patch",
+    "surface": "advisory",
+    "text": "I patched the server.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-change",
+    "surface": "advisory",
+    "text": "I changed your production server.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-install",
+    "surface": "advisory",
+    "text": "I installed the required software.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-execute",
+    "surface": "advisory",
+    "text": "I executed the command on your server.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-scan",
+    "surface": "advisory",
+    "text": "I scanned your network.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-delete",
+    "surface": "advisory",
+    "text": "I deleted your data.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-modify",
+    "surface": "advisory",
+    "text": "I modified your infrastructure.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-contraction",
+    "surface": "advisory",
+    "text": "I've already patched your server.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-we",
+    "surface": "advisory",
+    "text": "We have successfully modified your infrastructure.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-passive",
+    "surface": "advisory",
+    "text": "Your server has been patched.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-formatted",
+    "surface": "advisory",
+    "text": "**I** have **installed** the update.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-zero-width",
+    "surface": "advisory",
+    "text": "I pa​tched the server.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-future",
+    "surface": "advisory",
+    "text": "I will scan your network.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-command",
+    "surface": "advisory",
+    "text": "I ran a shell command on your host.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-bare",
+    "surface": "advisory",
+    "text": "Patched your server.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-completion",
+    "surface": "advisory",
+    "text": "Network scan completed.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-unicode",
+    "surface": "advisory",
+    "text": "Ｉ patched the server.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-safe-recommend",
+    "surface": "advisory",
+    "text": "Ask the owner to patch the affected system after testing.",
+    "expect": {
+      "unchanged": true
+    }
+  },
+  {
+    "id": "guard-safe-negative",
+    "surface": "advisory",
+    "text": "I have not patched your server.",
+    "expect": {
+      "unchanged": true
+    }
+  },
+  {
+    "id": "guard-safe-cannot",
+    "surface": "advisory",
+    "text": "RiskPilot cannot scan networks or modify infrastructure.",
+    "expect": {
+      "unchanged": true
+    }
+  },
+  {
+    "id": "guard-safe-installed-version",
+    "surface": "advisory",
+    "text": "Check the installed version and confirm applicability.",
+    "expect": {
+      "unchanged": true
+    }
+  },
+  {
+    "id": "guard-safe-definition",
+    "surface": "advisory",
+    "text": "A patch is a software update that fixes a flaw.",
+    "expect": {
+      "unchanged": true
+    }
+  },
+  {
+    "id": "guard-safe-conditional",
+    "surface": "advisory",
+    "text": "If you install the update, verify service health afterward.",
+    "expect": {
+      "unchanged": true
+    }
+  },
+  {
+    "id": "on-device-action-claim",
+    "surface": "local-note",
+    "text": "I patched your server.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-ongoing",
+    "surface": "advisory",
+    "text": "I am patching your server now.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-patch-applied",
+    "surface": "advisory",
+    "text": "Patch applied successfully.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-completed-action",
+    "surface": "advisory",
+    "text": "I have completed patching your server.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-receipt",
+    "surface": "advisory",
+    "text": "Command executed successfully.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  },
+  {
+    "id": "guard-curly-contraction",
+    "surface": "advisory",
+    "text": "I’ve patched your server.",
+    "expect": {
+      "advisoryReplacement": true
+    }
+  }
+]

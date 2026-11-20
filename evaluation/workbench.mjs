@@ -9,7 +9,7 @@ let trial = 0;
 
 // Minimal DOM surface for the real application handlers. Each trial gets its own
 // form, controls, trace, network fixture and fresh app module instance.
-class Element {
+export class Element {
   children = [];
   events = new Map();
   dataset = {};
@@ -26,6 +26,13 @@ class Element {
   click() { return this.dispatch('click'); }
   setAttribute(name, value) { this.attributes[name] = value; }
   focus() {}
+  querySelector(selector) {
+    if (selector === 'summary') return this.summary ??= new Element('summary');
+    if (selector === 'button[type=submit]') return this.submit ??= new Element('button');
+    return null;
+  }
+  reportValidity() { return true; }
+  reset() {}
   get innerHTML() {
     const escape = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
     return escape(this.textContent) + this.children.map(node => node.outerHTML).join('');
@@ -66,11 +73,12 @@ function readReport(card) {
   };
 }
 
-export async function exercise(testCase) {
+export async function exercise(testCase, api) {
   const nodes = new Map([...page.matchAll(/<([\w-]+)\b([^>]*?\bid="([^"]+)"[^>]*)>/g)].map(([, tag, attrs, id]) => {
     const node = new Element(tag);
     node.disabled = /\bdisabled\b/.test(attrs);
     node.hidden = /\bhidden\b/.test(attrs);
+    node.checked = /\bchecked\b/.test(attrs);
     return [id, node];
   }));
   const get = id => {
@@ -87,19 +95,22 @@ export async function exercise(testCase) {
   get('trace').parentElement = new Element('details');
   const original = {
     document: globalThis.document, location: globalThis.location, FormData: globalThis.FormData,
-    fetch: globalThis.fetch, createObjectURL: URL.createObjectURL, revokeObjectURL: URL.revokeObjectURL
+    fetch: globalThis.fetch, turnstile: globalThis.turnstile,
+    createObjectURL: URL.createObjectURL, revokeObjectURL: URL.revokeObjectURL
   };
   try {
     globalThis.document = {
       getElementById: get,
       createElement: tag => new Element(tag),
+      head: {append: script => queueMicrotask(() => script.onload())},
       querySelectorAll: selector => selector === '.state' ? stages : [...fields.map(get), get('run'), get('ai')]
     };
-    globalThis.location = {search: ''};
+    globalThis.location = {search: '', origin: api ? 'https://kho24.github.io' : ''};
+    if (api) globalThis.turnstile = api.turnstile;
     globalThis.FormData = class {
       *[Symbol.iterator]() { for (const field of fields) yield [field, get(field).value]; }
     };
-    globalThis.fetch = async (url, options) => {
+    const sourceFetch = async (url, options) => {
       const method = options?.method ?? 'GET';
       requests.push({url, method, timeoutSignal: options?.signal instanceof AbortSignal});
       if (url !== expectedUrl || method !== 'GET' || !testCase.lookup) {
@@ -115,10 +126,20 @@ export async function exercise(testCase) {
         }}
       })};
     };
+    globalThis.fetch = api ? (url, options) => api.fetch(url, options, sourceFetch) : sourceFetch;
     URL.createObjectURL = blob => { exports.push(blob); return 'blob:evaluation'; };
     URL.revokeObjectURL = () => {};
 
-    await import('../dist/app.js?trial=' + ++trial);
+    // Resolve the actual bridge afresh so its public-origin check and widget state
+    // cannot leak across trials. Only import specifiers are rewritten.
+    const appUrl = new URL('../dist/app.js', import.meta.url);
+    let source = await readFile(appUrl, 'utf8');
+    for (const name of ['engine', 'demos', 'gemini']) {
+      const resolved = new URL(name + '.js', appUrl);
+      if (name === 'gemini') resolved.search = 'trial=' + ++trial;
+      source = source.replace("'./" + name + ".js'", JSON.stringify(resolved.href));
+    }
+    await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64') + '#trial=' + ++trial);
     if (testCase.demo) get('demo-options').children[Object.keys(demos).indexOf(testCase.demo)].click();
     for (const [field, value] of Object.entries(testCase.input)) get(field).value = value;
     const submit = () => get('assessment').dispatch('submit');
@@ -131,10 +152,18 @@ export async function exercise(testCase) {
       return exports.length > before;
     };
     submit();
-    await settle();
+    const waitForRun = async () => {
+      const deadline = Date.now() + 10000;
+      while (get('run').disabled && Date.now() < deadline) await settle();
+      if (get('run').disabled) throw new Error('Assessment did not settle');
+    };
+    await waitForRun();
     const report = get('report').children[0];
     if (!report) throw new Error('Assessment produced no report: ' + get('message').textContent);
     const output = readReport(report);
+    const noteIndex = report.children.findIndex(node => node.textContent === 'Gemini Risk Analyst note');
+    output.geminiNote = noteIndex < 0 ? null : report.children[noteIndex + 1].textContent;
+    output.geminiStatus = get('gemini-status').textContent;
     output.stages = stages.map(stage => stage.textContent);
     output.approval = {initial: status(), initiallyDisabled: download.disabled, exportedBeforeApproval: tryExport()};
     const action = testCase.expect.approval;
@@ -148,7 +177,7 @@ export async function exercise(testCase) {
       output.approval.exportedApprovedAdvisory = (await exports[0]?.text())?.includes('Human Approved') ?? false;
       submit();
       output.approval.exportedDuringNewRun = tryExport();
-      await settle();
+      await waitForRun();
       Object.assign(output.approval, {newStatus: status(), newDownloadDisabled: download.disabled, exportedAfterReset: tryExport()});
       output.resetTrace = trace();
     }
@@ -160,6 +189,7 @@ export async function exercise(testCase) {
     globalThis.location = original.location;
     globalThis.FormData = original.FormData;
     globalThis.fetch = original.fetch;
+    globalThis.turnstile = original.turnstile;
     URL.createObjectURL = original.createObjectURL;
     URL.revokeObjectURL = original.revokeObjectURL;
   }
